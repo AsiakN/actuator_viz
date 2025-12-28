@@ -1,0 +1,13 @@
+[project]
+dependencies = [
+    "numpy>=1.21",
+    "plotly>=5.0",
+    "pyyaml>=6.0",
+    "jsonschema>=4.0",
+    "typer>=0.9",      # CLI
+    "rich>=13.0",   
+]
+
+[project.optional-dependencies]
+web = ["streamlit>=1.28"]
+dev = ["pytest", "pytest-cov", "black", "ruff"]

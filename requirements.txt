@@ -1,0 +1,2 @@
+plotly>=5.0.0                # Interactive HTML visualizations
+numpy>=1.21.5
