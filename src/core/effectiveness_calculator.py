@@ -20,7 +20,7 @@ from typing import Optional
 
 # Visualization module (optional)
 try:
-    from effectiveness_visualizer import (
+    from src.visualizers.effectiveness_visualizer import (
         generate_visualization_report,
         check_plotly_available
     )
