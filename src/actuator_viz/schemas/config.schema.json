@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://actuator-viz.github.io/schemas/config.schema.json",
+  "title": "Actuator Configuration",
+  "description": "Configuration schema for actuator-viz multi-actuator systems",
+  "type": "object",
+  "required": ["actuators"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for this configuration",
+      "default": "Unnamed Configuration"
+    },
+    "frame": {
+      "type": "string",
+      "description": "Coordinate frame convention",
+      "enum": ["ENU", "NED", "body"],
+      "default": "ENU"
+    },
+    "units": {
+      "type": "string",
+      "description": "Position units",
+      "enum": ["meters", "millimeters", "inches"],
+      "default": "meters"
+    },
+    "actuators": {
+      "type": "array",
+      "description": "List of actuator definitions",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/actuator"
+      }
+    },
+    "geometry": {
+      "$ref": "#/$defs/geometry"
+    }
+  },
+  "$defs": {
+    "actuator": {
+      "type": "object",
+      "description": "Single actuator definition",
+      "required": ["position", "axis"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Unique identifier (auto-assigned if omitted)",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of actuator",
+          "enum": ["thruster", "propeller", "servo", "motor"],
+          "default": "thruster"
+        },
+        "position": {
+          "type": "array",
+          "description": "Position relative to center of gravity [x, y, z]",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "axis": {
+          "type": "array",
+          "description": "Thrust/force direction vector [x, y, z] (will be normalized)",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "coefficient": {
+          "type": "number",
+          "description": "Thrust/force coefficient (scales output)",
+          "default": 1.0
+        },
+        "moment_ratio": {
+          "type": "number",
+          "description": "Yaw moment from spin (km), typically 0 for thrusters",
+          "default": 0.0
+        },
+        "bidirectional": {
+          "type": "boolean",
+          "description": "Whether actuator can produce force in both directions",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometry": {
+      "type": "object",
+      "description": "Vehicle geometry for visualization",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Geometry type",
+          "enum": ["box", "cylinder", "mesh"],
+          "default": "box"
+        },
+        "dimensions": {
+          "type": "array",
+          "description": "Dimensions based on type: box=[l,w,h], cylinder=[r,h]",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 3
+        },
+        "mesh_file": {
+          "type": "string",
+          "description": "Path to STL/OBJ mesh file (for mesh type)"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

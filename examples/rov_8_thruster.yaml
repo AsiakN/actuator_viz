@@ -1,0 +1,79 @@
+# Example: 8-Thruster ROV Configuration
+# This is the UUV Reconbot configuration with proper bilateral yaw control
+
+name: "UUV Reconbot (Fixed)"
+frame: "ENU"  # East-North-Up coordinate frame
+units: "meters"
+
+# Vehicle geometry for visualization
+geometry:
+  type: "box"
+  dimensions: [0.9, 0.3, 0.25]  # length, width, height
+
+actuators:
+  # Rotors 0-3: 45° angled thrusters (heave + sway)
+  - id: 0
+    name: "Bow Starboard Vertical"
+    type: "thruster"
+    position: [-0.424, 0.134, -0.117]
+    axis: [0, -0.707, 0.707]
+    coefficient: 1.0
+    moment_ratio: 0.0
+
+  - id: 1
+    name: "Bow Port Vertical"
+    type: "thruster"
+    position: [-0.424, -0.134, -0.117]
+    axis: [0, 0.707, 0.707]
+    coefficient: 1.0
+    moment_ratio: 0.0
+
+  - id: 2
+    name: "Stern Port Vertical"
+    type: "thruster"
+    position: [0.462, -0.134, -0.117]
+    axis: [0, 0.707, -0.707]
+    coefficient: 1.0
+    moment_ratio: 0.0
+
+  - id: 3
+    name: "Stern Starboard Vertical"
+    type: "thruster"
+    position: [0.462, 0.134, -0.117]
+    axis: [0, -0.707, -0.707]
+    coefficient: 1.0
+    moment_ratio: 0.0
+
+  # Rotors 4-5: Forward thrusters (surge)
+  - id: 4
+    name: "Bow Port Forward"
+    type: "thruster"
+    position: [-0.169, -0.139, -0.099]
+    axis: [1, 0, 0]
+    coefficient: 1.0
+    moment_ratio: 0.0
+
+  - id: 5
+    name: "Bow Starboard Forward"
+    type: "thruster"
+    position: [-0.169, 0.139, -0.099]
+    axis: [1, 0, 0]
+    coefficient: 1.0
+    moment_ratio: 0.0
+
+  # Rotors 6-7: Lateral thrusters (sway + yaw)
+  - id: 6
+    name: "Stern Starboard Lateral"
+    type: "thruster"
+    position: [0.306, 0.088, 0.160]
+    axis: [0, 1, 0]
+    coefficient: 1.0
+    moment_ratio: 0.0
+
+  - id: 7
+    name: "Stern Port Lateral"
+    type: "thruster"
+    position: [0.270, -0.088, 0.160]
+    axis: [0, -1, 0]  # Opposite direction for yaw control
+    coefficient: 1.0
+    moment_ratio: 0.0
