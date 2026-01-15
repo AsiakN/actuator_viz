@@ -1,0 +1,10 @@
+# ArduSub BlueROV2 Configuration
+# Frame: Vectored (6 thrusters)
+
+FRAME_CONFIG,1
+BRD_TYPE,7
+ARMING_CHECK,1
+
+# Other ArduSub parameters
+PILOT_SPEED_UP,250
+PILOT_SPEED_DN,250
