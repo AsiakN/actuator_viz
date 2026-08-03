@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .models import Actuator, ActuatorConfig
+from .models import ActuatorConfig
 from .geometry import cross_product
 
 
