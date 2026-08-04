@@ -36,6 +36,9 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Generated visualization reports (produced by `actuator-viz -o ...`)
+*_report.html
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
