@@ -1,0 +1,47 @@
+# Torpedo-style AUV with a mesh vehicle body.
+#
+# Demonstrates realistic vehicle rendering: the `geometry.type: mesh` block
+# points at an STL/OBJ hull that is drawn instead of the box approximation.
+# Requires the mesh extra:  pip install 'actuator-viz[mesh]'
+#
+# The mesh must be centered on the same CoG the actuator positions reference,
+# in the same frame. `scale` converts the mesh units to meters (1.0 = meters).
+# mesh_file is resolved relative to your current directory — run from the repo
+# root so `examples/torpedo_auv.obj` resolves.
+name: "Torpedo AUV"
+frame: "ENU"
+units: "meters"
+
+geometry:
+  type: mesh
+  mesh_file: examples/torpedo_auv.obj
+  scale: 1.0
+
+actuators:
+  # Four 45-degree canted thrusters near the corners give heave, sway, roll,
+  # and pitch (same vectored pattern as the 8-thruster ROV).
+  - id: 0
+    name: "Bow Port Canted"
+    position: [0.30, -0.12, 0.0]
+    axis: [0, -0.707, 0.707]
+  - id: 1
+    name: "Bow Starboard Canted"
+    position: [0.30, 0.12, 0.0]
+    axis: [0, 0.707, 0.707]
+  - id: 2
+    name: "Stern Port Canted"
+    position: [-0.35, -0.12, 0.0]
+    axis: [0, 0.707, 0.707]
+  - id: 3
+    name: "Stern Starboard Canted"
+    position: [-0.35, 0.12, 0.0]
+    axis: [0, -0.707, 0.707]
+  # Two aft surge thrusters give forward thrust and yaw.
+  - id: 4
+    name: "Aft Port Surge"
+    position: [-0.45, -0.10, 0.0]
+    axis: [1, 0, 0]
+  - id: 5
+    name: "Aft Starboard Surge"
+    position: [-0.45, 0.10, 0.0]
+    axis: [1, 0, 0]

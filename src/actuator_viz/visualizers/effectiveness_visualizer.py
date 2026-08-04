@@ -12,6 +12,7 @@ Requires: plotly>=5.0.0, numpy
 Author: Generated for UUV Reconbot project
 """
 
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -58,31 +59,12 @@ def classify_thruster(rotor: dict) -> str:
         return 'default'
 
 
-def create_3d_thruster_plot(rotors: list[dict],
-                            effectiveness: np.ndarray | None = None) -> go.Figure:
-    """
-    Create interactive 3D plot of thruster positions and thrust vectors.
-
-    Args:
-        rotors: List of rotor configuration dicts
-        effectiveness: Optional effectiveness matrix for annotations
-
-    Returns:
-        Plotly Figure object
-    """
-    fig = go.Figure()
-
-    # Vehicle body (semi-transparent box approximation)
-    # Estimate vehicle dimensions from thruster positions
-    positions = np.array([[r.get('px', 0), r.get('py', 0), r.get('pz', 0)]
-                          for r in rotors])
-
+def _add_vehicle_box(fig: go.Figure, positions: np.ndarray) -> None:
+    """Add a semi-transparent box body estimated from the thruster extents."""
     x_range = [positions[:, 0].min() - 0.1, positions[:, 0].max() + 0.1]
     y_range = [positions[:, 1].min() - 0.05, positions[:, 1].max() + 0.05]
     z_range = [positions[:, 2].min() - 0.05, positions[:, 2].max() + 0.05]
 
-    # Add vehicle body as mesh
-    # Create a simple rectangular box
     x_body = [x_range[0], x_range[1], x_range[1], x_range[0],
               x_range[0], x_range[1], x_range[1], x_range[0]]
     y_body = [y_range[0], y_range[0], y_range[1], y_range[1],
@@ -100,6 +82,72 @@ def create_3d_thruster_plot(rotors: list[dict],
         name='Vehicle Body',
         hoverinfo='name'
     ))
+
+
+def _add_vehicle_mesh(fig: go.Figure, geometry) -> bool:
+    """
+    Add the real vehicle body from an STL/OBJ mesh.
+
+    Returns True on success, False if the mesh could not be rendered (missing
+    'mesh' extra, missing/invalid file) so the caller can fall back to a box.
+    """
+    from .mesh import MESH_SUPPORT, load_mesh
+
+    if not MESH_SUPPORT:
+        warnings.warn(
+            "Mesh rendering requires the 'mesh' extra; drawing a box instead. "
+            "Install with: pip install 'actuator-viz[mesh]'",
+            stacklevel=2,
+        )
+        return False
+
+    try:
+        vertices, faces = load_mesh(geometry.mesh_file, geometry.mesh_scale)
+    except (FileNotFoundError, ValueError) as err:
+        warnings.warn(f"Could not load vehicle mesh: {err}; drawing a box instead.",
+                      stacklevel=2)
+        return False
+
+    fig.add_trace(go.Mesh3d(
+        x=vertices[:, 0], y=vertices[:, 1], z=vertices[:, 2],
+        i=faces[:, 0], j=faces[:, 1], k=faces[:, 2],
+        color='lightsteelblue',
+        opacity=0.35,
+        flatshading=True,
+        name='Vehicle Body',
+        hoverinfo='name',
+    ))
+    return True
+
+
+def create_3d_thruster_plot(rotors: list[dict],
+                            effectiveness: np.ndarray | None = None,
+                            geometry=None) -> go.Figure:
+    """
+    Create interactive 3D plot of thruster positions and thrust vectors.
+
+    Args:
+        rotors: List of rotor configuration dicts
+        effectiveness: Optional effectiveness matrix for annotations
+        geometry: Optional Geometry. When it declares an STL/OBJ mesh (and the
+            'mesh' extra is installed), the real vehicle body is rendered;
+            otherwise a box approximation is drawn.
+
+    Returns:
+        Plotly Figure object
+    """
+    fig = go.Figure()
+
+    positions = np.array([[r.get('px', 0), r.get('py', 0), r.get('pz', 0)]
+                          for r in rotors])
+
+    # Vehicle body: render the real mesh when one is provided, otherwise fall
+    # back to a semi-transparent box estimated from the thruster extents.
+    mesh_added = False
+    if geometry is not None and geometry.geometry_type == "mesh" and geometry.mesh_file:
+        mesh_added = _add_vehicle_mesh(fig, geometry)
+    if not mesh_added:
+        _add_vehicle_box(fig, positions)
 
     # Add thrusters and thrust vectors
     for i, rotor in enumerate(rotors):
@@ -346,7 +394,8 @@ def generate_visualization_report(rotors: list[dict],
                                    controllability_result: dict,
                                    issues: list[str],
                                    output_path: str = 'effectiveness_report.html',
-                                   title: str = 'Thruster Configuration Report') -> str:
+                                   title: str = 'Thruster Configuration Report',
+                                   geometry=None) -> str:
     """
     Generate complete HTML visualization report.
 
@@ -357,6 +406,7 @@ def generate_visualization_report(rotors: list[dict],
         issues: List of issue strings from detect_issues()
         output_path: Output HTML file path
         title: Report title
+        geometry: Optional Geometry for rendering the vehicle body (mesh or box)
 
     Returns:
         Path to generated HTML file
@@ -368,7 +418,7 @@ def generate_visualization_report(rotors: list[dict],
         )
 
     # Create individual figures
-    fig_3d = create_3d_thruster_plot(rotors, effectiveness)
+    fig_3d = create_3d_thruster_plot(rotors, effectiveness, geometry=geometry)
     fig_heatmap = create_effectiveness_heatmap(effectiveness)
     fig_authority = create_control_authority_chart(controllability_result)
 
