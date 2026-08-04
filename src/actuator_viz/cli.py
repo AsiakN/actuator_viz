@@ -4,7 +4,7 @@ Command-line interface for actuator-viz.
 Usage:
     actuator-viz config.yaml              # Analyze configuration
     actuator-viz config.yaml --verbose    # Show effectiveness matrix
-    actuator-viz config.yaml --output report.html  # Generate report (future)
+    actuator-viz config.yaml --output report.html  # Generate HTML report
     actuator-viz --web                    # Launch web UI (future)
 """
 
@@ -50,6 +50,10 @@ def cli(
         bool,
         typer.Option("--verbose", "-v", help="Show detailed output including effectiveness matrix")
     ] = False,
+    output: Annotated[
+        Optional[Path],
+        typer.Option("--output", "-o", help="Write an interactive HTML report to this path")
+    ] = None,
     version: Annotated[
         bool,
         typer.Option("--version", "-V", callback=version_callback, is_eager=True, help="Show version and exit")
@@ -80,6 +84,10 @@ def cli(
         # Print results
         print_report(config, result, verbose)
 
+        # Optionally write an HTML report
+        if output is not None:
+            write_html_report(config, result, output)
+
         # Exit with appropriate code
         if not result.controllable:
             raise typer.Exit(1)
@@ -90,9 +98,40 @@ def cli(
     except ValueError as e:
         error_console.print(f"[red]Error:[/red] Invalid configuration: {e}")
         raise typer.Exit(1)
+    except typer.Exit:
+        # Intentional exit (e.g. non-controllable config) — not an error.
+        raise
     except Exception as e:
         error_console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
+
+
+def write_html_report(config, result, output_path: Path) -> None:
+    """
+    Write an interactive HTML report for the analysis.
+
+    Adapts the modern ActuatorConfig/AnalysisResult dataclasses to the
+    dict-based contract of the visualizer module, then delegates to it.
+    """
+    try:
+        from .visualizers import generate_visualization_report
+    except ImportError:
+        error_console.print(
+            "[red]Error:[/red] Plotly is required for HTML reports. "
+            "Install with: [cyan]pip install 'plotly>=5.0'[/cyan]"
+        )
+        raise typer.Exit(1)
+
+    generate_visualization_report(
+        rotors=config.to_rotor_list(),
+        effectiveness=result.effectiveness_matrix,
+        controllability_result=result.to_dict(),
+        issues=result.issues,
+        output_path=str(output_path),
+        title=f"{config.name} — Effectiveness Report",
+    )
+
+    console.print(f"\n[green]✓[/green] Report written to [cyan]{output_path}[/cyan]")
 
 
 def print_report(config, result, verbose: bool = False):
