@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Union
 
 from ..core.models import ActuatorConfig
 
@@ -37,7 +36,7 @@ class ConfigParser(ABC):
         pass
 
     @abstractmethod
-    def can_parse(self, source: Union[str, Path]) -> bool:
+    def can_parse(self, source: str | Path) -> bool:
         """
         Check if this parser can handle the given source.
 
@@ -52,7 +51,7 @@ class ConfigParser(ABC):
         pass
 
     @abstractmethod
-    def parse(self, source: Union[str, Path]) -> ActuatorConfig:
+    def parse(self, source: str | Path) -> ActuatorConfig:
         """
         Parse configuration from file or string.
 
@@ -68,7 +67,7 @@ class ConfigParser(ABC):
         """
         pass
 
-    def parse_file(self, path: Union[str, Path]) -> ActuatorConfig:
+    def parse_file(self, path: str | Path) -> ActuatorConfig:
         """
         Parse configuration from a file path.
 
@@ -131,7 +130,7 @@ class ParserRegistry:
                 return True
         return False
 
-    def get_parser(self, source: Union[str, Path]) -> ConfigParser | None:
+    def get_parser(self, source: str | Path) -> ConfigParser | None:
         """
         Find a parser that can handle the given source.
 
@@ -148,7 +147,7 @@ class ParserRegistry:
                 return parser
         return None
 
-    def parse(self, source: Union[str, Path]) -> ActuatorConfig:
+    def parse(self, source: str | Path) -> ActuatorConfig:
         """
         Parse configuration using auto-detected parser.
 
@@ -195,7 +194,7 @@ def register_parser(parser: ConfigParser) -> None:
     _registry.register(parser)
 
 
-def parse_config(source: Union[str, Path]) -> ActuatorConfig:
+def parse_config(source: str | Path) -> ActuatorConfig:
     """
     Parse configuration using auto-detected parser from global registry.
 

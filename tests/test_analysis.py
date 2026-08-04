@@ -10,8 +10,8 @@ from actuator_viz import (
     ActuatorConfig,
     analyze,
     analyze_config,
-    compute_effectiveness_matrix,
     compute_control_authority,
+    compute_effectiveness_matrix,
     detect_issues,
 )
 

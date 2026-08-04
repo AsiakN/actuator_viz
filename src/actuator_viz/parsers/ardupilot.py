@@ -13,12 +13,11 @@ This parser supports:
 from __future__ import annotations
 
 import re
-from pathlib import Path
-from typing import Union
 from enum import IntEnum
+from pathlib import Path
 
+from ..core.models import Actuator, ActuatorConfig, Geometry
 from .base import ConfigParser
-from ..core.models import ActuatorConfig, Actuator, Geometry
 
 
 class ArduSubFrame(IntEnum):
@@ -113,7 +112,7 @@ class ArduPilotParser(ConfigParser):
     def extensions(self) -> list[str]:
         return [".param", ".parm"]
 
-    def can_parse(self, source: Union[str, Path]) -> bool:
+    def can_parse(self, source: str | Path) -> bool:
         """Check if source is an ArduPilot configuration."""
         content = self._get_content(source)
         if content is None:
@@ -140,7 +139,7 @@ class ArduPilotParser(ConfigParser):
 
         return False
 
-    def parse(self, source: Union[str, Path]) -> ActuatorConfig:
+    def parse(self, source: str | Path) -> ActuatorConfig:
         """
         Parse ArduPilot configuration to ActuatorConfig.
 
@@ -171,7 +170,7 @@ class ArduPilotParser(ConfigParser):
             "No FRAME_CONFIG or motor parameters found."
         )
 
-    def _get_content(self, source: Union[str, Path]) -> str | None:
+    def _get_content(self, source: str | Path) -> str | None:
         """Get string content from file path or string."""
         if isinstance(source, Path):
             if source.exists():
@@ -187,13 +186,13 @@ class ArduPilotParser(ConfigParser):
         return None
 
     def _parse_predefined_frame(
-        self, frame_type: int, source: Union[str, Path]
+        self, frame_type: int, source: str | Path
     ) -> ActuatorConfig:
         """Build config from predefined ArduSub frame type."""
         try:
             frame_enum = ArduSubFrame(frame_type)
-        except ValueError:
-            raise ValueError(f"Unknown ArduSub frame type: {frame_type}")
+        except ValueError as err:
+            raise ValueError(f"Unknown ArduSub frame type: {frame_type}") from err
 
         if frame_enum not in ARDUSUB_FRAMES:
             raise ValueError(
@@ -253,7 +252,7 @@ class ArduPilotParser(ConfigParser):
         return motors
 
     def _build_config_from_motors(
-        self, motors: dict[int, dict], source: Union[str, Path]
+        self, motors: dict[int, dict], source: str | Path
     ) -> ActuatorConfig:
         """Build ActuatorConfig from parsed motor parameters."""
         actuators = []
@@ -296,7 +295,7 @@ class ArduPilotParser(ConfigParser):
         )
 
 
-def parse_ardupilot(path: Union[str, Path]) -> ActuatorConfig:
+def parse_ardupilot(path: str | Path) -> ActuatorConfig:
     """
     Parse an ArduPilot parameter file.
 

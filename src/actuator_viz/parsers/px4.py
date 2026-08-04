@@ -18,10 +18,9 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Union
 
+from ..core.models import Actuator, ActuatorConfig
 from .base import ConfigParser
-from ..core.models import ActuatorConfig, Actuator
 
 
 class PX4Parser(ConfigParser):
@@ -60,7 +59,7 @@ class PX4Parser(ConfigParser):
         # PX4 airframes often have no extension or custom extensions
         return []
 
-    def can_parse(self, source: Union[str, Path]) -> bool:
+    def can_parse(self, source: str | Path) -> bool:
         """
         Check if source is a PX4 airframe file.
 
@@ -73,7 +72,7 @@ class PX4Parser(ConfigParser):
         # Check for CA_ROTOR parameters
         return bool(self.DETECTION_PATTERN.search(content))
 
-    def parse(self, source: Union[str, Path]) -> ActuatorConfig:
+    def parse(self, source: str | Path) -> ActuatorConfig:
         """
         Parse PX4 airframe file to ActuatorConfig.
 
@@ -124,7 +123,7 @@ class PX4Parser(ConfigParser):
             units="meters",
         )
 
-    def _get_content(self, source: Union[str, Path]) -> str | None:
+    def _get_content(self, source: str | Path) -> str | None:
         """Get string content from file path or string."""
         if isinstance(source, Path):
             if source.exists():
@@ -140,7 +139,7 @@ class PX4Parser(ConfigParser):
 
         return None
 
-    def _extract_name(self, source: Union[str, Path], content: str) -> str:
+    def _extract_name(self, source: str | Path, content: str) -> str:
         """Extract configuration name from source."""
         # Try to get from file path
         if isinstance(source, (str, Path)):
@@ -178,7 +177,7 @@ class PX4Parser(ConfigParser):
         return rotors
 
 
-def parse_px4_airframe(path: Union[str, Path]) -> ActuatorConfig:
+def parse_px4_airframe(path: str | Path) -> ActuatorConfig:
     """
     Parse a PX4 airframe file.
 

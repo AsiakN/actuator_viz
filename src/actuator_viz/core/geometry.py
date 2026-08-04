@@ -7,7 +7,6 @@ Provides vector math and coordinate frame transformations.
 from __future__ import annotations
 
 import numpy as np
-from typing import Literal
 
 from .models import CoordinateFrame
 

@@ -5,12 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from actuator_viz import cross_product, normalize
+from actuator_viz import CoordinateFrame, cross_product, normalize
 from actuator_viz.core.geometry import (
     angle_between_vectors,
     transform_vector,
 )
-from actuator_viz import CoordinateFrame
 
 
 def test_cross_product_matches_numpy():
