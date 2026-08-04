@@ -19,7 +19,11 @@ from rich.panel import Panel
 from rich.table import Table
 
 from . import __version__, parse_config, analyze
-from .core.analysis import compute_control_authority
+from .core.analysis import (
+    compute_control_authority,
+    simulate_failure,
+    analyze_all_failures,
+)
 from .core.effectiveness import get_dof_names
 
 # Create Typer app
@@ -54,6 +58,14 @@ def cli(
         Optional[Path],
         typer.Option("--output", "-o", help="Write an interactive HTML report to this path")
     ] = None,
+    failure: Annotated[
+        Optional[int],
+        typer.Option("--failure", help="Simulate actuator with this ID going offline")
+    ] = None,
+    failure_all: Annotated[
+        bool,
+        typer.Option("--failure-all", help="Simulate every single-actuator failure in turn")
+    ] = False,
     version: Annotated[
         bool,
         typer.Option("--version", "-V", callback=version_callback, is_eager=True, help="Show version and exit")
@@ -87,6 +99,21 @@ def cli(
         # Optionally write an HTML report
         if output is not None:
             write_html_report(config, result, output)
+
+        # Optionally run failure-mode analysis
+        if failure_all:
+            impacts = analyze_all_failures(config)
+            print_failure_analysis(impacts, comprehensive=True)
+        elif failure is not None:
+            actuator = config.get_actuator(failure)
+            if actuator is None:
+                error_console.print(
+                    f"[red]Error:[/red] No actuator with ID {failure}. "
+                    f"Available IDs: {', '.join(str(a.id) for a in config.actuators)}"
+                )
+                raise typer.Exit(1)
+            index = config.actuators.index(actuator)
+            print_failure_analysis([simulate_failure(config, index)])
 
         # Exit with appropriate code
         if not result.controllable:
@@ -132,6 +159,89 @@ def write_html_report(config, result, output_path: Path) -> None:
     )
 
     console.print(f"\n[green]✓[/green] Report written to [cyan]{output_path}[/cyan]")
+
+
+def print_failure_analysis(impacts, comprehensive: bool = False) -> None:
+    """
+    Print single-actuator failure analysis as a table.
+
+    Args:
+        impacts: List of FailureImpact to display.
+        comprehensive: True if every actuator was tested (``--failure-all``),
+            which licenses a system-wide fault-tolerance conclusion.
+    """
+    console.print()
+    console.print("[bold]Single-Actuator Failure Analysis[/bold]")
+
+    table = Table(show_header=True, header_style="bold", box=None, padding=(0, 2))
+    table.add_column("ID", justify="right", style="dim")
+    table.add_column("Actuator")
+    table.add_column("DOF", justify="center")
+    table.add_column("Condition", justify="right")
+    table.add_column("Impact")
+
+    for impact in impacts:
+        # DOF column: rank/6 with a pass/fail glyph
+        if impact.controllable:
+            dof = "[green]6/6 ✓[/green]"
+        else:
+            dof = f"[red]{impact.rank}/6 ✗[/red]"
+
+        # Condition number
+        cn = impact.condition_number
+        if cn == float("inf"):
+            condition = "[red]∞[/red]"
+        else:
+            condition = f"{cn:.2f}"
+
+        # Impact column
+        if impact.critical:
+            impact_text = (
+                f"[red]loses {', '.join(impact.lost_dofs)}[/red]  "
+                f"[bold red]← CRITICAL[/bold red]"
+            )
+        else:
+            impact_text = "[green]nominal[/green]"
+
+        table.add_row(
+            str(impact.actuator_id),
+            impact.actuator_name,
+            dof,
+            condition,
+            impact_text,
+        )
+
+    console.print(table)
+
+    # Summary line
+    critical = [i for i in impacts if i.critical]
+    console.print()
+    if comprehensive:
+        # Every actuator was tested — we can make a system-wide claim.
+        if critical:
+            names = ", ".join(str(i.actuator_id) for i in critical)
+            console.print(
+                f"[bold red]⚠[/bold red] {len(critical)} of {len(impacts)} actuators "
+                f"are critical (failure loses control): IDs {names}"
+            )
+        else:
+            console.print(
+                f"[green]✓[/green] All {len(impacts)} actuators are non-critical — "
+                "the system tolerates any single failure."
+            )
+    else:
+        # Only the requested actuator(s) were tested.
+        for impact in impacts:
+            if impact.critical:
+                console.print(
+                    f"[bold red]⚠[/bold red] Actuator {impact.actuator_id} is critical — "
+                    f"its failure loses control of {', '.join(impact.lost_dofs)}."
+                )
+            else:
+                console.print(
+                    f"[green]✓[/green] Actuator {impact.actuator_id} is non-critical — "
+                    "the system tolerates its failure."
+                )
 
 
 def print_report(config, result, verbose: bool = False):

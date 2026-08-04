@@ -9,6 +9,8 @@ Provides SVD-based analysis to determine:
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
 import numpy as np
 
 from .models import ActuatorConfig, AnalysisResult
@@ -176,6 +178,123 @@ def detect_issues(
         )
 
     return issues
+
+
+@dataclass
+class FailureImpact:
+    """
+    Impact of a single actuator going offline.
+
+    Attributes:
+        actuator_id: ID of the failed actuator
+        actuator_name: Name of the failed actuator
+        rank: Rank of the effectiveness matrix with this actuator removed
+        controllable: True if the degraded system is still fully controllable
+        condition_number: Condition number of the degraded system
+        lost_dofs: DOFs achievable in the full system but not after this failure
+    """
+    actuator_id: int
+    actuator_name: str
+    rank: int
+    controllable: bool
+    condition_number: float
+    lost_dofs: list[str] = field(default_factory=list)
+
+    @property
+    def critical(self) -> bool:
+        """A failure is critical if it removes control of any DOF."""
+        return len(self.lost_dofs) > 0
+
+
+def achievable_dofs(effectiveness: np.ndarray, tol: float = 1e-6) -> set[str]:
+    """
+    Determine which DOFs the system can actually command.
+
+    A DOF is achievable if its unit wrench (e.g. pure yaw) lies in the column
+    space of the effectiveness matrix. This is stronger than rank: rank gives
+    the *dimension* of the controllable subspace, while this identifies *which*
+    specific axes are controllable.
+
+    Args:
+        effectiveness: 6×N effectiveness matrix
+        tol: Residual below which a DOF is considered achievable
+
+    Returns:
+        Set of DOF names (subset of get_dof_names()) that are controllable
+    """
+    dof_names = get_dof_names()
+    if effectiveness.ndim != 2 or effectiveness.shape[1] == 0:
+        return set()
+
+    # Orthogonal projector onto the column space (range) of E.
+    projector = effectiveness @ np.linalg.pinv(effectiveness)
+
+    achievable = set()
+    for i, name in enumerate(dof_names):
+        e = np.zeros(6)
+        e[i] = 1.0
+        residual = np.linalg.norm(e - projector @ e)
+        if residual < tol:
+            achievable.add(name)
+    return achievable
+
+
+def simulate_failure(config: ActuatorConfig, actuator_index: int) -> FailureImpact:
+    """
+    Simulate a single actuator failing (going offline) and analyze the result.
+
+    Removes the actuator's column from the effectiveness matrix and re-runs
+    controllability analysis on the degraded system.
+
+    Args:
+        config: The full (healthy) actuator configuration
+        actuator_index: Index into config.actuators of the failing actuator
+
+    Returns:
+        FailureImpact describing the degraded system
+    """
+    actuator = config.actuators[actuator_index]
+
+    full_effectiveness = compute_effectiveness_matrix(config)
+    baseline = achievable_dofs(full_effectiveness)
+
+    reduced = np.delete(full_effectiveness, actuator_index, axis=1)
+
+    if reduced.shape[1] == 0:
+        # No actuators left — nothing is controllable.
+        rank, controllable, condition = 0, False, float("inf")
+        degraded: set[str] = set()
+    else:
+        result = analyze_controllability(reduced)
+        rank = result.rank
+        controllable = result.controllable
+        condition = result.condition_number
+        degraded = achievable_dofs(reduced)
+
+    # DOFs we could command before, but can't with this actuator offline.
+    lost = [d for d in get_dof_names() if d in baseline and d not in degraded]
+
+    return FailureImpact(
+        actuator_id=actuator.id,
+        actuator_name=actuator.name,
+        rank=rank,
+        controllable=controllable,
+        condition_number=condition,
+        lost_dofs=lost,
+    )
+
+
+def analyze_all_failures(config: ActuatorConfig) -> list[FailureImpact]:
+    """
+    Simulate every single-actuator failure in turn.
+
+    Args:
+        config: The full (healthy) actuator configuration
+
+    Returns:
+        List of FailureImpact, one per actuator, in config order
+    """
+    return [simulate_failure(config, i) for i in range(config.n_actuators)]
 
 
 def compute_control_authority(effectiveness: np.ndarray) -> dict[str, float]:
