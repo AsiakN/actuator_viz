@@ -37,6 +37,10 @@ from .core.analysis import (
     compute_control_authority,
     compute_allocation_matrix,
     print_analysis_report,
+    FailureImpact,
+    achievable_dofs,
+    simulate_failure,
+    analyze_all_failures,
 )
 
 # Geometry utilities
@@ -130,6 +134,11 @@ __all__ = [
     "detect_issues",
     "print_effectiveness_matrix",
     "print_analysis_report",
+    # Failure analysis
+    "FailureImpact",
+    "achievable_dofs",
+    "simulate_failure",
+    "analyze_all_failures",
     # Geometry
     "cross_product",
     "normalize",

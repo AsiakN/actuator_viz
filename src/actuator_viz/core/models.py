@@ -130,7 +130,7 @@ class Actuator:
         """
         Create from legacy rotor dict format (px, py, pz, ax, ay, az).
 
-        This supports the format used by PX4 and the original effectiveness_calculator.
+        This supports the legacy rotor dict format used by the PX4 parser.
         """
         return cls(
             id=rotor.get("id", index),
@@ -259,7 +259,7 @@ class ActuatorConfig:
         """
         Create from legacy rotor list format.
 
-        This supports the format used by PX4 and the original effectiveness_calculator.
+        This supports the legacy rotor dict format used by the PX4 parser.
         """
         actuators = [
             Actuator.from_rotor_dict(r, i) for i, r in enumerate(rotors)
