@@ -18,6 +18,7 @@ import numpy as np
 
 try:
     import plotly.graph_objects as go
+    from plotly.offline import get_plotlyjs
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -371,13 +372,17 @@ def generate_visualization_report(rotors: list[dict],
     fig_heatmap = create_effectiveness_heatmap(effectiveness)
     fig_authority = create_control_authority_chart(controllability_result)
 
+    # Inline the full Plotly.js bundle so the report is self-contained and
+    # renders offline (no CDN dependency when emailed or opened air-gapped).
+    plotly_js = get_plotlyjs()
+
     # Build HTML report
     html_content = f'''<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <title>{title}</title>
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script>{plotly_js}</script>
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
