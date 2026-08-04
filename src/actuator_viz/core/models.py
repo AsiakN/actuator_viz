@@ -12,7 +12,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -165,7 +164,7 @@ class Geometry:
     """
     geometry_type: str = "box"
     dimensions: tuple[float, ...] = (1.0, 0.4, 0.3)
-    mesh_file: Optional[Path] = None
+    mesh_file: Path | None = None
 
     def __post_init__(self):
         if isinstance(self.dimensions, list):
@@ -190,7 +189,7 @@ class ActuatorConfig:
     name: str = "Unnamed Configuration"
     frame: CoordinateFrame = CoordinateFrame.ENU
     units: str = "meters"
-    geometry: Optional[Geometry] = None
+    geometry: Geometry | None = None
 
     def __post_init__(self):
         if isinstance(self.frame, str):
@@ -206,7 +205,7 @@ class ActuatorConfig:
         """Number of actuators."""
         return len(self.actuators)
 
-    def get_actuator(self, id_or_name: int | str) -> Optional[Actuator]:
+    def get_actuator(self, id_or_name: int | str) -> Actuator | None:
         """Get actuator by ID or name."""
         for actuator in self.actuators:
             if actuator.id == id_or_name or actuator.name == id_or_name:
@@ -307,8 +306,8 @@ class AnalysisResult:
     singular_values: np.ndarray
     condition_number: float
     weak_axes: list[str] = field(default_factory=list)
-    effectiveness_matrix: Optional[np.ndarray] = None
-    U: Optional[np.ndarray] = None
+    effectiveness_matrix: np.ndarray | None = None
+    U: np.ndarray | None = None
     issues: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:

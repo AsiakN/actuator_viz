@@ -60,7 +60,7 @@ def test_rotor_list_roundtrip_preserves_geometry():
     rotors = config.to_rotor_list()
     rebuilt = ActuatorConfig.from_rotor_list(rotors)
 
-    for original, copy in zip(config.actuators, rebuilt.actuators):
+    for original, copy in zip(config.actuators, rebuilt.actuators, strict=True):
         np.testing.assert_allclose(copy.position, original.position)
         np.testing.assert_allclose(copy.axis, original.axis)
         assert copy.coefficient == original.coefficient

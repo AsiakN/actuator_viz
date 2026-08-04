@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import yaml
 
+from ..core.models import Actuator, ActuatorConfig, ActuatorType, CoordinateFrame, Geometry
 from .base import ConfigParser
-from ..core.models import ActuatorConfig, Actuator, Geometry, CoordinateFrame, ActuatorType
 
 
 class JsonYamlParser(ConfigParser):
@@ -50,7 +50,7 @@ class JsonYamlParser(ConfigParser):
     def extensions(self) -> list[str]:
         return [".yaml", ".yml", ".json"]
 
-    def can_parse(self, source: Union[str, Path]) -> bool:
+    def can_parse(self, source: str | Path) -> bool:
         """
         Check if source is a JSON/YAML file or string.
 
@@ -76,7 +76,7 @@ class JsonYamlParser(ConfigParser):
 
         return False
 
-    def parse(self, source: Union[str, Path]) -> ActuatorConfig:
+    def parse(self, source: str | Path) -> ActuatorConfig:
         """
         Parse JSON or YAML configuration.
 
@@ -89,7 +89,7 @@ class JsonYamlParser(ConfigParser):
         data = self._load_data(source)
         return self._parse_data(data)
 
-    def _load_data(self, source: Union[str, Path]) -> dict[str, Any]:
+    def _load_data(self, source: str | Path) -> dict[str, Any]:
         """Load data from file or string."""
         if isinstance(source, Path) or (isinstance(source, str) and Path(source).exists()):
             path = Path(source)
@@ -188,7 +188,7 @@ class JsonYamlParser(ConfigParser):
         )
 
 
-def load_yaml(path: Union[str, Path]) -> ActuatorConfig:
+def load_yaml(path: str | Path) -> ActuatorConfig:
     """
     Load actuator configuration from a YAML file.
 
@@ -204,7 +204,7 @@ def load_yaml(path: Union[str, Path]) -> ActuatorConfig:
     return parser.parse(Path(path))
 
 
-def load_json(path: Union[str, Path]) -> ActuatorConfig:
+def load_json(path: str | Path) -> ActuatorConfig:
     """
     Load actuator configuration from a JSON file.
 

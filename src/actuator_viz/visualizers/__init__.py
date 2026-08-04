@@ -9,11 +9,11 @@ Provides Plotly-based visualizations for actuator configurations.
 
 try:
     from .effectiveness_visualizer import (
-        create_3d_thruster_plot,
-        create_effectiveness_heatmap,
-        create_control_authority_chart,
-        generate_visualization_report,
         check_plotly_available,
+        create_3d_thruster_plot,
+        create_control_authority_chart,
+        create_effectiveness_heatmap,
+        generate_visualization_report,
     )
 
     __all__ = [

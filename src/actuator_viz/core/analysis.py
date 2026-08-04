@@ -13,8 +13,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .models import ActuatorConfig, AnalysisResult
 from .effectiveness import compute_effectiveness_matrix, get_dof_names
+from .models import ActuatorConfig, AnalysisResult
 
 
 def analyze_controllability(

@@ -12,13 +12,12 @@ Requires: plotly>=5.0.0, numpy
 Author: Generated for UUV Reconbot project
 """
 
-import numpy as np
-from typing import Optional
 from pathlib import Path
+
+import numpy as np
 
 try:
     import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -59,7 +58,7 @@ def classify_thruster(rotor: dict) -> str:
 
 
 def create_3d_thruster_plot(rotors: list[dict],
-                            effectiveness: Optional[np.ndarray] = None) -> go.Figure:
+                            effectiveness: np.ndarray | None = None) -> go.Figure:
     """
     Create interactive 3D plot of thruster positions and thrust vectors.
 
@@ -193,7 +192,7 @@ def create_3d_thruster_plot(rotors: list[dict],
 
 
 def create_effectiveness_heatmap(effectiveness: np.ndarray,
-                                  rotor_names: Optional[list[str]] = None) -> go.Figure:
+                                  rotor_names: list[str] | None = None) -> go.Figure:
     """
     Create heatmap visualization of effectiveness matrix.
 

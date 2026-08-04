@@ -11,18 +11,18 @@ Usage:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from . import __version__, parse_config, analyze
+from . import __version__, analyze, parse_config
 from .core.analysis import (
+    analyze_all_failures,
     compute_control_authority,
     simulate_failure,
-    analyze_all_failures,
 )
 from .core.effectiveness import get_dof_names
 
@@ -47,7 +47,7 @@ def version_callback(value: bool):
 @app.command()
 def cli(
     config_file: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Argument(help="Path to configuration file (YAML, JSON, PX4 airframe, or ArduPilot params)")
     ] = None,
     verbose: Annotated[
@@ -55,11 +55,11 @@ def cli(
         typer.Option("--verbose", "-v", help="Show detailed output including effectiveness matrix")
     ] = False,
     output: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--output", "-o", help="Write an interactive HTML report to this path")
     ] = None,
     failure: Annotated[
-        Optional[int],
+        int | None,
         typer.Option("--failure", help="Simulate actuator with this ID going offline")
     ] = None,
     failure_all: Annotated[
@@ -121,16 +121,16 @@ def cli(
 
     except FileNotFoundError:
         error_console.print(f"[red]Error:[/red] File not found: {config_file}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except ValueError as e:
         error_console.print(f"[red]Error:[/red] Invalid configuration: {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except typer.Exit:
         # Intentional exit (e.g. non-controllable config) — not an error.
         raise
     except Exception as e:
         error_console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 def write_html_report(config, result, output_path: Path) -> None:
@@ -147,7 +147,7 @@ def write_html_report(config, result, output_path: Path) -> None:
             "[red]Error:[/red] Plotly is required for HTML reports. "
             "Install with: [cyan]pip install 'plotly>=5.0'[/cyan]"
         )
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     generate_visualization_report(
         rotors=config.to_rotor_list(),

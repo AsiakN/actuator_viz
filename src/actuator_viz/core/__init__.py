@@ -4,6 +4,27 @@ Core modules for actuator-viz.
 Contains the fundamental data models, math, and analysis algorithms.
 """
 
+from .analysis import (
+    analyze_config,
+    analyze_controllability,
+    compute_allocation_matrix,
+    compute_control_authority,
+    detect_issues,
+    print_analysis_report,
+)
+from .effectiveness import (
+    compute_effectiveness_from_rotors,
+    compute_effectiveness_matrix,
+    get_dof_names,
+    print_effectiveness_matrix,
+)
+from .geometry import (
+    cross_product,
+    normalize,
+    rotation_matrix_enu_to_ned,
+    rotation_matrix_ned_to_enu,
+    transform_vector,
+)
 from .models import (
     Actuator,
     ActuatorConfig,
@@ -11,30 +32,6 @@ from .models import (
     AnalysisResult,
     CoordinateFrame,
     Geometry,
-)
-
-from .effectiveness import (
-    compute_effectiveness_matrix,
-    compute_effectiveness_from_rotors,
-    print_effectiveness_matrix,
-    get_dof_names,
-)
-
-from .analysis import (
-    analyze_controllability,
-    analyze_config,
-    detect_issues,
-    compute_control_authority,
-    compute_allocation_matrix,
-    print_analysis_report,
-)
-
-from .geometry import (
-    cross_product,
-    normalize,
-    transform_vector,
-    rotation_matrix_enu_to_ned,
-    rotation_matrix_ned_to_enu,
 )
 
 __all__ = [

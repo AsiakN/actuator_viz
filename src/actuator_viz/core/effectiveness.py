@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from .models import ActuatorConfig
 from .geometry import cross_product
+from .models import ActuatorConfig
 
 
 def compute_effectiveness_matrix(config: ActuatorConfig) -> np.ndarray:
