@@ -33,8 +33,10 @@ def _body_trace(fig):
 @requires_mesh
 def test_load_mesh_reads_obj(examples_dir):
     vertices, faces = load_mesh(examples_dir / "torpedo_auv.obj")
-    assert vertices.shape == (9, 3)
+    assert vertices.ndim == 2 and vertices.shape[1] == 3
     assert faces.shape[1] == 3  # triangulated
+    # A real revolved hull, not the 8-vertex box approximation.
+    assert len(vertices) > 100
 
 
 @requires_mesh
@@ -54,7 +56,9 @@ def test_load_mesh_missing_file_raises(examples_dir):
 def test_plot_renders_mesh_body(examples_dir):
     geo = Geometry(geometry_type="mesh", mesh_file=examples_dir / "torpedo_auv.obj")
     fig = create_3d_thruster_plot(_rotors(), geometry=geo)
-    assert len(_body_trace(fig).x) == 9  # the torpedo hull, not the 8-vertex box
+    # The body trace carries the real hull's vertices, not the 8-vertex box.
+    mesh_verts, _ = load_mesh(examples_dir / "torpedo_auv.obj")
+    assert len(_body_trace(fig).x) == len(mesh_verts) > 8
 
 
 def test_plot_without_geometry_uses_box():
