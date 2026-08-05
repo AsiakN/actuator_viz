@@ -156,6 +156,7 @@ def write_html_report(config, result, output_path: Path) -> None:
         issues=result.issues,
         output_path=str(output_path),
         title=f"{config.name} — Effectiveness Report",
+        geometry=config.geometry,
     )
 
     console.print(f"\n[green]✓[/green] Report written to [cyan]{output_path}[/cyan]")

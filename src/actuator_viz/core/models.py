@@ -161,10 +161,14 @@ class Geometry:
             - cylinder: [radius, height]
             - mesh: not used
         mesh_file: Path to STL/OBJ file (for mesh type)
+        mesh_scale: Multiplier applied to mesh coordinates. Use to convert the
+            mesh's units to the actuator frame's meters (e.g. 0.001 for a mesh
+            authored in millimeters).
     """
     geometry_type: str = "box"
     dimensions: tuple[float, ...] = (1.0, 0.4, 0.3)
     mesh_file: Path | None = None
+    mesh_scale: float = 1.0
 
     def __post_init__(self):
         if isinstance(self.dimensions, list):
@@ -227,6 +231,7 @@ class ActuatorConfig:
             }
             if self.geometry.mesh_file:
                 result["geometry"]["mesh_file"] = str(self.geometry.mesh_file)
+                result["geometry"]["scale"] = self.geometry.mesh_scale
         return result
 
     @classmethod
@@ -243,6 +248,7 @@ class ActuatorConfig:
                 geometry_type=geo_data.get("type", "box"),
                 dimensions=tuple(geo_data.get("dimensions", [1.0, 0.4, 0.3])),
                 mesh_file=geo_data.get("mesh_file"),
+                mesh_scale=geo_data.get("scale", 1.0),
             )
 
         return cls(

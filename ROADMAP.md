@@ -146,7 +146,7 @@ Failure Analysis:
 
 ## Future Ideas (Post-Release)
 
-- STL/OBJ mesh loading for vehicle body visualization
+- [x] STL/OBJ mesh loading for vehicle body visualization (`[mesh]` extra; see `torpedo_auv.yaml`)
 - Inverse visualization (show force allocation for a commanded wrench)
 - Optimization suggestions ("move actuator 3 by X to improve condition number")
 - Export to PX4/ArduPilot format (reverse direction)
