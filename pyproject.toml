@@ -64,10 +64,10 @@ dev = [
 actuator-viz = "actuator_viz.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/actuator-viz/actuator-viz"
-Documentation = "https://github.com/actuator-viz/actuator-viz#readme"
-Repository = "https://github.com/actuator-viz/actuator-viz"
-Issues = "https://github.com/actuator-viz/actuator-viz/issues"
+Homepage = "https://github.com/AsiakN/actuator_viz"
+Documentation = "https://github.com/AsiakN/actuator_viz#readme"
+Repository = "https://github.com/AsiakN/actuator_viz"
+Issues = "https://github.com/AsiakN/actuator_viz/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/actuator_viz"]
