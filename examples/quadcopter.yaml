@@ -1,0 +1,43 @@
+# Quadcopter in X configuration with a realistic frame mesh.
+#
+# A standard quad is *underactuated*: all four rotors thrust along +Z, so the
+# effectiveness matrix is rank 4 (Z force + roll + pitch + yaw). It cannot
+# produce Fx/Fy directly — it translates by tilting. actuator-viz reports this
+# honestly (4/6 DOF), which is the expected, correct result for a quadcopter.
+#
+# The `geometry.type: mesh` block draws the real airframe instead of a box.
+# Requires the mesh extra:  pip install 'actuator-viz[mesh]'
+# Regenerate the mesh with:  python examples/generate_quadcopter_mesh.py
+name: "Quadcopter X"
+frame: "ENU"
+units: "meters"
+
+geometry:
+  type: mesh
+  mesh_file: examples/quadcopter.obj
+  scale: 1.0
+
+actuators:
+  # moment_ratio (km) is the propeller reaction torque per unit thrust; its sign
+  # is the spin direction. Diagonal pairs spin opposite (CW/CCW), which is what
+  # gives the quad its yaw authority.
+  - id: 0
+    name: "Front Right"
+    position: [0.15, -0.15, 0.0]
+    axis: [0, 0, 1]
+    moment_ratio: 0.05   # CW
+  - id: 1
+    name: "Back Left"
+    position: [-0.15, 0.15, 0.0]
+    axis: [0, 0, 1]
+    moment_ratio: 0.05   # CW
+  - id: 2
+    name: "Front Left"
+    position: [0.15, 0.15, 0.0]
+    axis: [0, 0, 1]
+    moment_ratio: -0.05  # CCW
+  - id: 3
+    name: "Back Right"
+    position: [-0.15, -0.15, 0.0]
+    axis: [0, 0, 1]
+    moment_ratio: -0.05  # CCW
