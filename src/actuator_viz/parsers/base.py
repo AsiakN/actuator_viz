@@ -12,6 +12,11 @@ from pathlib import Path
 
 from ..core.models import ActuatorConfig
 
+# Robust float matcher shared by the param-file parsers: optional sign, an
+# integer / decimal / leading-dot mantissa, and an optional exponent. Unlike a
+# loose ``[\d.]+`` this never captures a bare ``.`` (which crashed float()).
+NUMBER_RE = r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?"
+
 
 class ConfigParser(ABC):
     """
@@ -149,7 +154,14 @@ class ParserRegistry:
 
     def parse(self, source: str | Path) -> ActuatorConfig:
         """
-        Parse configuration using auto-detected parser.
+        Parse configuration using auto-detected parser(s).
+
+        Every parser whose ``can_parse`` accepts the source is tried in
+        registration order. If one accepts the format but fails to parse it
+        (e.g. an over-eager detector matched a file it can't actually turn into
+        an actuator layout), the next candidate is tried and the errors are
+        aggregated — so an ambiguous file gets a clear diagnosis instead of the
+        first candidate's hard failure.
 
         Args:
             source: File path or string content
@@ -158,15 +170,32 @@ class ParserRegistry:
             ActuatorConfig object
 
         Raises:
-            ValueError: If no parser can handle the source
+            ValueError: If no parser recognizes the source, or every parser that
+                recognized it failed to parse it.
         """
-        parser = self.get_parser(source)
-        if parser is None:
+        candidates = [p for p in self._parsers if p.can_parse(source)]
+        if not candidates:
             raise ValueError(
-                f"No parser found for source. Registered parsers: "
+                f"No parser recognized this source. Registered parsers: "
                 f"{[p.name for p in self._parsers]}"
             )
-        return parser.parse(source)
+
+        errors: list[str] = []
+        for parser in candidates:
+            try:
+                return parser.parse(source)
+            except ValueError as err:
+                # This parser claimed the format but couldn't parse it; record
+                # why and let the next candidate try. FileNotFoundError and the
+                # like are real I/O failures and propagate.
+                errors.append(f"{parser.name}: {err}")
+
+        tried = ", ".join(p.name for p in candidates)
+        detail = " | ".join(errors)
+        raise ValueError(
+            f"Recognized the file but could not build an actuator layout from it "
+            f"(tried: {tried}). {detail}"
+        )
 
     def list_parsers(self) -> list[str]:
         """List names of registered parsers."""

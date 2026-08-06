@@ -13,11 +13,12 @@ This parser supports:
 from __future__ import annotations
 
 import re
+import warnings
 from enum import IntEnum
 from pathlib import Path
 
 from ..core.models import Actuator, ActuatorConfig, Geometry
-from .base import ConfigParser
+from .base import NUMBER_RE, ConfigParser
 
 
 class ArduSubFrame(IntEnum):
@@ -97,12 +98,15 @@ class ArduPilotParser(ConfigParser):
     - ArduPilot .param/.parm files
     """
 
-    # Pattern to detect ArduPilot parameters
-    PARAM_PATTERN = re.compile(r'^(\w+)\s*[,=]\s*(-?[\d.]+(?:e[+-]?\d+)?)', re.MULTILINE | re.IGNORECASE)
-
     # Specific patterns
     FRAME_CONFIG_PATTERN = re.compile(r'FRAME_CONFIG\s*[,=]\s*(\d+)', re.IGNORECASE)
-    MOT_PATTERN = re.compile(r'MOT_(\d+)_(\w+)\s*[,=]\s*(-?[\d.]+)', re.IGNORECASE)
+    MOT_PATTERN = re.compile(rf'MOT_(\d+)_(\w+)\s*[,=]\s*({NUMBER_RE})', re.IGNORECASE)
+
+    # Per-motor keys that actually describe a layout (position / axis).
+    _GEOMETRY_KEYS = frozenset({
+        'POS_X', 'POSX', 'POS_Y', 'POSY', 'POS_Z', 'POSZ',
+        'AXIS_X', 'DIR_X', 'AXIS_Y', 'DIR_Y', 'AXIS_Z', 'DIR_Z',
+    })
 
     @property
     def name(self) -> str:
@@ -118,26 +122,21 @@ class ArduPilotParser(ConfigParser):
         if content is None:
             return False
 
-        # Check file extension
+        # A .param/.parm file is ours to attempt (parse() reports clearly if it
+        # turns out to carry no usable geometry).
         if isinstance(source, (str, Path)):
             path = Path(source)
             if path.exists() and path.suffix.lower() in self.extensions:
                 return True
 
-        # Check for ArduPilot-specific parameters
-        ardupilot_indicators = [
-            'FRAME_CONFIG',
-            'MOT_1_',
-            'SERVO_FUNCTION',
-            'BRD_TYPE',
-            'ARMING_CHECK',
-        ]
-
-        for indicator in ardupilot_indicators:
-            if indicator in content.upper():
-                return True
-
-        return False
+        # For raw content, only claim it on signals we can actually act on: an
+        # ArduSub frame selector or numbered motor params. Generic markers like
+        # ARMING_CHECK / BRD_TYPE appear in every ArduPilot dump (including
+        # motorless planes) and would falsely claim files we can't parse.
+        return bool(
+            self.FRAME_CONFIG_PATTERN.search(content)
+            or self.MOT_PATTERN.search(content)
+        )
 
     def parse(self, source: str | Path) -> ActuatorConfig:
         """
@@ -160,14 +159,20 @@ class ArduPilotParser(ConfigParser):
             frame_type = int(frame_match.group(1))
             return self._parse_predefined_frame(frame_type, source)
 
-        # Try to parse custom motor definitions
+        # Try to parse custom motor definitions — but only if they actually
+        # carry position/axis data. Numbered motor params without geometry
+        # (e.g. MOT_1_DIRECTION) would otherwise produce motors stacked at the
+        # origin, which is worse than a clear error.
         motors = self._parse_motor_params(content)
-        if motors:
+        if motors and any(self._GEOMETRY_KEYS & p.keys() for p in motors.values()):
             return self._build_config_from_motors(motors, source)
 
         raise ValueError(
-            "Could not parse ArduPilot configuration. "
-            "No FRAME_CONFIG or motor parameters found."
+            "No usable ArduPilot geometry found. Supported: an ArduSub "
+            f"FRAME_CONFIG frame ({[f.name for f in ARDUSUB_FRAMES]}), or "
+            "numbered motor params with positions/axes (MOT_n_POS_X, "
+            "MOT_n_AXIS_X, ...). A standard vehicle parameter dump doesn't "
+            "encode motor positions — describe the layout in a YAML config."
         )
 
     def _get_content(self, source: str | Path) -> str | None:
@@ -201,6 +206,15 @@ class ArduPilotParser(ConfigParser):
             )
 
         frame_def = ARDUSUB_FRAMES[frame_enum]
+
+        # ArduSub defines motors by control-mix factors, not Cartesian mounts.
+        # The positions/axes here are a representative layout for that frame
+        # type, not this vehicle's measured geometry — say so.
+        warnings.warn(
+            f"Using a representative geometry for the '{frame_def['name']}' "
+            "ArduSub frame; verify positions/axes against your actual vehicle.",
+            stacklevel=2,
+        )
 
         actuators = []
         for i, motor in enumerate(frame_def["motors"]):
