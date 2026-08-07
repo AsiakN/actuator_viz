@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -96,9 +96,9 @@ class JsonYamlParser(ConfigParser):
             content = path.read_text()
 
             if path.suffix.lower() == ".json":
-                return json.loads(content)
+                return cast("dict[str, Any]", json.loads(content))
             else:
-                return yaml.safe_load(content)
+                return cast("dict[str, Any]", yaml.safe_load(content))
 
         # Assume string content
         source_str = str(source).strip()
@@ -106,12 +106,12 @@ class JsonYamlParser(ConfigParser):
         # Try JSON first
         if source_str.startswith("{") or source_str.startswith("["):
             try:
-                return json.loads(source_str)
+                return cast("dict[str, Any]", json.loads(source_str))
             except json.JSONDecodeError:
                 pass
 
         # Fall back to YAML
-        return yaml.safe_load(source_str)
+        return cast("dict[str, Any]", yaml.safe_load(source_str))
 
     def _parse_data(self, data: dict[str, Any]) -> ActuatorConfig:
         """Convert parsed data to ActuatorConfig."""

@@ -12,12 +12,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 
 
 class CoordinateFrame(str, Enum):
     """Coordinate frame convention."""
+
     ENU = "ENU"  # East-North-Up (ROS standard)
     NED = "NED"  # North-East-Down (aviation/PX4 standard)
     BODY = "body"  # Body-fixed frame
@@ -25,6 +27,7 @@ class CoordinateFrame(str, Enum):
 
 class ActuatorType(str, Enum):
     """Type of actuator."""
+
     THRUSTER = "thruster"
     PROPELLER = "propeller"
     SERVO = "servo"
@@ -46,6 +49,7 @@ class Actuator:
         actuator_type: Type of actuator
         bidirectional: Whether actuator can produce force in both directions
     """
+
     id: int
     position: tuple[float, float, float]
     axis: tuple[float, float, float]
@@ -91,7 +95,7 @@ class Actuator:
     def axis_normalized(self) -> np.ndarray:
         """Normalized axis vector."""
         axis = self.axis_array
-        return axis / np.linalg.norm(axis)
+        return cast(np.ndarray, axis / np.linalg.norm(axis))
 
     def to_dict(self) -> dict:
         """Convert to dictionary (for serialization)."""
@@ -165,6 +169,7 @@ class Geometry:
             mesh's units to the actuator frame's meters (e.g. 0.001 for a mesh
             authored in millimeters).
     """
+
     geometry_type: str = "box"
     dimensions: tuple[float, ...] = (1.0, 0.4, 0.3)
     mesh_file: Path | None = None
@@ -189,6 +194,7 @@ class ActuatorConfig:
         units: Position units (meters, millimeters, etc.)
         geometry: Optional vehicle geometry for visualization
     """
+
     actuators: list[Actuator]
     name: str = "Unnamed Configuration"
     frame: CoordinateFrame = CoordinateFrame.ENU
@@ -218,7 +224,7 @@ class ActuatorConfig:
 
     def to_dict(self) -> dict:
         """Convert to dictionary (for serialization)."""
-        result = {
+        result: dict[str, Any] = {
             "name": self.name,
             "frame": self.frame.value,
             "units": self.units,
@@ -237,9 +243,7 @@ class ActuatorConfig:
     @classmethod
     def from_dict(cls, data: dict) -> ActuatorConfig:
         """Create from dictionary."""
-        actuators = [
-            Actuator.from_dict(a) for a in data.get("actuators", [])
-        ]
+        actuators = [Actuator.from_dict(a) for a in data.get("actuators", [])]
 
         geometry = None
         if "geometry" in data:
@@ -266,9 +270,7 @@ class ActuatorConfig:
 
         This supports the legacy rotor dict format used by the PX4 parser.
         """
-        actuators = [
-            Actuator.from_rotor_dict(r, i) for i, r in enumerate(rotors)
-        ]
+        actuators = [Actuator.from_rotor_dict(r, i) for i, r in enumerate(rotors)]
         return cls(name=name, actuators=actuators)
 
     def to_rotor_list(self) -> list[dict]:
@@ -307,6 +309,7 @@ class AnalysisResult:
         U: Left singular vectors from SVD
         issues: List of detected configuration issues
     """
+
     rank: int
     controllable: bool
     singular_values: np.ndarray

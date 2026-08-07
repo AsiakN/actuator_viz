@@ -18,9 +18,9 @@ from actuator_viz import (
 
 def test_identical_actuators_have_rank_one(single_z_thruster):
     # Three copies of the same actuator span a 1-D space.
-    config = ActuatorConfig(actuators=[
-        Actuator(id=i, position=(0, 0, 0), axis=(0, 0, 1)) for i in range(3)
-    ])
+    config = ActuatorConfig(
+        actuators=[Actuator(id=i, position=(0, 0, 0), axis=(0, 0, 1)) for i in range(3)]
+    )
     result = analyze(config)
     assert result.rank == 1
     assert not result.controllable
@@ -65,10 +65,12 @@ def test_detect_issues_flags_missing_dof(three_axis_forces):
 
 
 def test_detect_issues_flags_redundant_actuators():
-    config = ActuatorConfig(actuators=[
-        Actuator(id=0, position=(0.0, 0.0, 0.0), axis=(0, 0, 1)),
-        Actuator(id=1, position=(0.0, 0.0, 0.0), axis=(0, 0, 1)),
-    ])
+    config = ActuatorConfig(
+        actuators=[
+            Actuator(id=0, position=(0.0, 0.0, 0.0), axis=(0, 0, 1)),
+            Actuator(id=1, position=(0.0, 0.0, 0.0), axis=(0, 0, 1)),
+        ]
+    )
     e = compute_effectiveness_matrix(config)
     issues = detect_issues(e, config)
     assert any("REDUNDANT" in i for i in issues)

@@ -48,27 +48,33 @@ def version_callback(value: bool):
 def cli(
     config_file: Annotated[
         Path | None,
-        typer.Argument(help="Path to configuration file (YAML, JSON, PX4 airframe, or ArduPilot params)")
+        typer.Argument(
+            help="Path to configuration file (YAML, JSON, PX4 airframe, or ArduPilot params)"
+        ),
     ] = None,
     verbose: Annotated[
         bool,
-        typer.Option("--verbose", "-v", help="Show detailed output including effectiveness matrix")
+        typer.Option("--verbose", "-v", help="Show detailed output including effectiveness matrix"),
     ] = False,
     output: Annotated[
         Path | None,
-        typer.Option("--output", "-o", help="Write an interactive HTML report to this path")
+        typer.Option("--output", "-o", help="Write an interactive HTML report to this path"),
     ] = None,
     failure: Annotated[
-        int | None,
-        typer.Option("--failure", help="Simulate actuator with this ID going offline")
+        int | None, typer.Option("--failure", help="Simulate actuator with this ID going offline")
     ] = None,
     failure_all: Annotated[
-        bool,
-        typer.Option("--failure-all", help="Simulate every single-actuator failure in turn")
+        bool, typer.Option("--failure-all", help="Simulate every single-actuator failure in turn")
     ] = False,
     version: Annotated[
         bool,
-        typer.Option("--version", "-V", callback=version_callback, is_eager=True, help="Show version and exit")
+        typer.Option(
+            "--version",
+            "-V",
+            callback=version_callback,
+            is_eager=True,
+            help="Show version and exit",
+        ),
     ] = False,
 ):
     """
@@ -250,12 +256,14 @@ def print_report(config, result, verbose: bool = False):
 
     # Header
     console.print()
-    console.print(Panel(
-        f"[bold]{config.name}[/bold]\n"
-        f"{config.n_actuators} actuators · {config.frame.value} frame",
-        title="actuator-viz",
-        border_style="blue",
-    ))
+    console.print(
+        Panel(
+            f"[bold]{config.name}[/bold]\n"
+            f"{config.n_actuators} actuators · {config.frame.value} frame",
+            title="actuator-viz",
+            border_style="blue",
+        )
+    )
 
     # Controllability status
     console.print()

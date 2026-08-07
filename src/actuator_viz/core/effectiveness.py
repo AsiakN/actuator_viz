@@ -106,8 +106,7 @@ def get_force_dof_names() -> list[str]:
 
 
 def print_effectiveness_matrix(
-    effectiveness: np.ndarray,
-    actuator_names: list[str] | None = None
+    effectiveness: np.ndarray, actuator_names: list[str] | None = None
 ) -> None:
     """
     Pretty-print the effectiveness matrix to console.

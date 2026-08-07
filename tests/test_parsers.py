@@ -32,8 +32,7 @@ def test_autodetect_ardupilot_params(examples_dir):
 def test_parse_yaml_string_roundtrip():
     from textwrap import dedent
 
-    text = dedent(
-        """
+    text = dedent("""
         name: "Inline Test"
         frame: "ENU"
         actuators:
@@ -43,8 +42,7 @@ def test_parse_yaml_string_roundtrip():
           - id: 1
             position: [1.0, 0.0, 0.0]
             axis: [0, 0, 1]
-        """
-    )
+        """)
     config = parse_yaml_string(text)
     assert config.name == "Inline Test"
     assert config.n_actuators == 2
@@ -56,6 +54,7 @@ def test_missing_file_raises(examples_dir):
 
 
 # --- PX4 parser robustness ---------------------------------------------------
+
 
 def test_px4_scientific_notation():
     config = PX4Parser().parse("CA_ROTOR0_PX 1.5e-2\nCA_ROTOR0_AZ 1")
@@ -100,6 +99,7 @@ def test_px4_rotor_count_mismatch_warns():
 
 
 # --- ArduPilot parser robustness ---------------------------------------------
+
 
 def test_ardupilot_does_not_claim_motorless_dump():
     # A plane-style dump (no FRAME_CONFIG, no numbered motor params) must not be

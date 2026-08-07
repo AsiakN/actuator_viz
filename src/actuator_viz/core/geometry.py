@@ -6,6 +6,8 @@ Provides vector math and coordinate frame transformations.
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 
 from .models import CoordinateFrame
@@ -30,11 +32,13 @@ def cross_product(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     Returns:
         3D vector perpendicular to both a and b
     """
-    return np.array([
-        a[1] * b[2] - a[2] * b[1],  # x component
-        a[2] * b[0] - a[0] * b[2],  # y component
-        a[0] * b[1] - a[1] * b[0],  # z component
-    ])
+    return np.array(
+        [
+            a[1] * b[2] - a[2] * b[1],  # x component
+            a[2] * b[0] - a[0] * b[2],  # y component
+            a[0] * b[1] - a[1] * b[0],  # z component
+        ]
+    )
 
 
 def normalize(v: np.ndarray) -> np.ndarray:
@@ -50,7 +54,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
     norm = np.linalg.norm(v)
     if norm < 1e-10:
         return np.zeros_like(v)
-    return v / norm
+    return cast(np.ndarray, v / norm)
 
 
 def rotation_matrix_enu_to_ned() -> np.ndarray:
@@ -68,11 +72,7 @@ def rotation_matrix_enu_to_ned() -> np.ndarray:
     Returns:
         3x3 rotation matrix
     """
-    return np.array([
-        [0, 1, 0],
-        [1, 0, 0],
-        [0, 0, -1]
-    ], dtype=float)
+    return np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]], dtype=float)
 
 
 def rotation_matrix_ned_to_enu() -> np.ndarray:
@@ -86,9 +86,7 @@ def rotation_matrix_ned_to_enu() -> np.ndarray:
 
 
 def transform_vector(
-    v: np.ndarray,
-    from_frame: CoordinateFrame,
-    to_frame: CoordinateFrame
+    v: np.ndarray, from_frame: CoordinateFrame, to_frame: CoordinateFrame
 ) -> np.ndarray:
     """
     Transform a vector between coordinate frames.
@@ -105,9 +103,9 @@ def transform_vector(
         return v.copy()
 
     if from_frame == CoordinateFrame.ENU and to_frame == CoordinateFrame.NED:
-        return rotation_matrix_enu_to_ned() @ v
+        return cast(np.ndarray, rotation_matrix_enu_to_ned() @ v)
     elif from_frame == CoordinateFrame.NED and to_frame == CoordinateFrame.ENU:
-        return rotation_matrix_ned_to_enu() @ v
+        return cast(np.ndarray, rotation_matrix_ned_to_enu() @ v)
     else:
         # BODY frame requires vehicle orientation, just return as-is for now
         # get orientation based on position of 3D visualization
@@ -134,11 +132,13 @@ def rotation_matrix_axis_angle(axis: np.ndarray, angle: float) -> np.ndarray:
 
     x, y, z = axis
 
-    return np.array([
-        [t*x*x + c,    t*x*y - s*z,  t*x*z + s*y],
-        [t*x*y + s*z,  t*y*y + c,    t*y*z - s*x],
-        [t*x*z - s*y,  t*y*z + s*x,  t*z*z + c]
-    ])
+    return np.array(
+        [
+            [t * x * x + c, t * x * y - s * z, t * x * z + s * y],
+            [t * x * y + s * z, t * y * y + c, t * y * z - s * x],
+            [t * x * z - s * y, t * y * z + s * x, t * z * z + c],
+        ]
+    )
 
 
 def angle_between_vectors(a: np.ndarray, b: np.ndarray) -> float:
@@ -155,7 +155,7 @@ def angle_between_vectors(a: np.ndarray, b: np.ndarray) -> float:
     a_norm = normalize(a)
     b_norm = normalize(b)
     dot = np.clip(np.dot(a_norm, b_norm), -1.0, 1.0)
-    return np.arccos(dot)
+    return float(np.arccos(dot))
 
 
 def project_onto_plane(v: np.ndarray, normal: np.ndarray) -> np.ndarray:
@@ -170,4 +170,4 @@ def project_onto_plane(v: np.ndarray, normal: np.ndarray) -> np.ndarray:
         Projected vector lying in the plane
     """
     n = normalize(normal)
-    return v - np.dot(v, n) * n
+    return cast(np.ndarray, v - np.dot(v, n) * n)

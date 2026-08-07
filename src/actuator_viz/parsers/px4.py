@@ -20,7 +20,7 @@ import re
 import warnings
 from pathlib import Path
 
-from ..core.models import Actuator, ActuatorConfig
+from ..core.models import Actuator, ActuatorConfig, CoordinateFrame
 from .base import NUMBER_RE, ConfigParser
 
 
@@ -37,18 +37,18 @@ class PX4Parser(ConfigParser):
     # NUMBER_RE so signs and scientific notation parse and malformed tokens
     # (e.g. a bare ".") are never captured.
     PARAM_PATTERNS = {
-        key: re.compile(rf'CA_ROTOR(\d+)_{key.upper()}\s+({NUMBER_RE})', re.IGNORECASE)
-        for key in ('px', 'py', 'pz', 'ax', 'ay', 'az', 'km', 'ct')
+        key: re.compile(rf"CA_ROTOR(\d+)_{key.upper()}\s+({NUMBER_RE})", re.IGNORECASE)
+        for key in ("px", "py", "pz", "ax", "ay", "az", "km", "ct")
     }
 
     # Which per-rotor keys carry actual layout geometry (vs. coefficients).
-    _GEOMETRY_KEYS = frozenset({'px', 'py', 'pz', 'ax', 'ay', 'az'})
+    _GEOMETRY_KEYS = frozenset({"px", "py", "pz", "ax", "ay", "az"})
 
     # Pattern to detect rotor count
-    ROTOR_COUNT_PATTERN = re.compile(r'CA_ROTOR_COUNT\s+(\d+)', re.IGNORECASE)
+    ROTOR_COUNT_PATTERN = re.compile(r"CA_ROTOR_COUNT\s+(\d+)", re.IGNORECASE)
 
     # Pattern to detect if file is a PX4 airframe
-    DETECTION_PATTERN = re.compile(r'CA_ROTOR\d+_[PAK]', re.IGNORECASE)
+    DETECTION_PATTERN = re.compile(r"CA_ROTOR\d+_[PAK]", re.IGNORECASE)
 
     @property
     def name(self) -> str:
@@ -124,9 +124,9 @@ class PX4Parser(ConfigParser):
         actuators = []
         for idx, rotor_data in sorted(rotors.items()):
             axis = (
-                rotor_data.get('ax', 0.0),
-                rotor_data.get('ay', 0.0),
-                rotor_data.get('az', 1.0),
+                rotor_data.get("ax", 0.0),
+                rotor_data.get("ay", 0.0),
+                rotor_data.get("az", 1.0),
             )
             if axis == (0.0, 0.0, 0.0):
                 raise ValueError(
@@ -137,20 +137,20 @@ class PX4Parser(ConfigParser):
                 id=idx,
                 name=f"Rotor_{idx}",
                 position=(
-                    rotor_data.get('px', 0.0),
-                    rotor_data.get('py', 0.0),
-                    rotor_data.get('pz', 0.0),
+                    rotor_data.get("px", 0.0),
+                    rotor_data.get("py", 0.0),
+                    rotor_data.get("pz", 0.0),
                 ),
                 axis=axis,
-                coefficient=rotor_data.get('ct', 1.0),
-                moment_ratio=rotor_data.get('km', 0.0),
+                coefficient=rotor_data.get("ct", 1.0),
+                moment_ratio=rotor_data.get("km", 0.0),
             )
             actuators.append(actuator)
 
         return ActuatorConfig(
             name=name,
             actuators=actuators,
-            frame="NED",  # PX4 uses NED frame
+            frame=CoordinateFrame.NED,  # PX4 uses NED frame
             units="meters",
         )
 
@@ -180,12 +180,12 @@ class PX4Parser(ConfigParser):
 
         # Try to find airframe name in content (often in comments)
         # Look for patterns like: # Airframe: MyQuad
-        name_match = re.search(r'#\s*(?:Airframe|Name|Vehicle):\s*(.+)', content, re.IGNORECASE)
+        name_match = re.search(r"#\s*(?:Airframe|Name|Vehicle):\s*(.+)", content, re.IGNORECASE)
         if name_match:
             return name_match.group(1).strip()
 
         # Look for SYS_AUTOSTART comment
-        autostart_match = re.search(r'SYS_AUTOSTART\s+(\d+)', content)
+        autostart_match = re.search(r"SYS_AUTOSTART\s+(\d+)", content)
         if autostart_match:
             return f"PX4 Airframe {autostart_match.group(1)}"
 
@@ -201,7 +201,7 @@ class PX4Parser(ConfigParser):
                 value = float(match.group(2))
 
                 if rotor_idx not in rotors:
-                    rotors[rotor_idx] = {'ct': 1.0, 'km': 0.0}
+                    rotors[rotor_idx] = {"ct": 1.0, "km": 0.0}
 
                 rotors[rotor_idx][param] = value
 

@@ -40,9 +40,7 @@ def test_offset_thruster_produces_moment():
 
 def test_moment_ratio_creates_yaw_reaction():
     # Spin reaction torque along the thrust axis: yaw = -km, Fz = 1.
-    e = _matrix(
-        Actuator(id=0, position=(0, 0, 0), axis=(0, 0, 1), moment_ratio=0.5)
-    )
+    e = _matrix(Actuator(id=0, position=(0, 0, 0), axis=(0, 0, 1), moment_ratio=0.5))
     np.testing.assert_allclose(e[:, 0], [0, 0, -0.5, 0, 0, 1], atol=1e-12)
 
 

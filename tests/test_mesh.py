@@ -14,16 +14,16 @@ from actuator_viz import Actuator, ActuatorConfig, Geometry, parse_config
 from actuator_viz.visualizers import create_3d_thruster_plot
 from actuator_viz.visualizers.mesh import MESH_SUPPORT, load_mesh
 
-requires_mesh = pytest.mark.skipif(
-    not MESH_SUPPORT, reason="requires the 'mesh' extra (trimesh)"
-)
+requires_mesh = pytest.mark.skipif(not MESH_SUPPORT, reason="requires the 'mesh' extra (trimesh)")
 
 
 def _rotors():
-    return ActuatorConfig(actuators=[
-        Actuator(id=0, position=(0.3, 0, 0), axis=(0, 0, 1)),
-        Actuator(id=1, position=(-0.3, 0, 0), axis=(0, 0, 1)),
-    ]).to_rotor_list()
+    return ActuatorConfig(
+        actuators=[
+            Actuator(id=0, position=(0.3, 0, 0), axis=(0, 0, 1)),
+            Actuator(id=1, position=(-0.3, 0, 0), axis=(0, 0, 1)),
+        ]
+    ).to_rotor_list()
 
 
 def _body_trace(fig):
