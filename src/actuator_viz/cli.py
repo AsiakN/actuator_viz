@@ -5,7 +5,7 @@ Usage:
     actuator-viz config.yaml              # Analyze configuration
     actuator-viz config.yaml --verbose    # Show effectiveness matrix
     actuator-viz config.yaml --output report.html  # Generate HTML report
-    actuator-viz --web                    # Launch web UI (future)
+    actuator-viz config.yaml --failure-all         # Sweep single-actuator failures
 """
 
 from __future__ import annotations
