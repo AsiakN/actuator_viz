@@ -20,6 +20,7 @@ import numpy as np
 try:
     import plotly.graph_objects as go
     from plotly.offline import get_plotlyjs
+
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -27,10 +28,10 @@ except ImportError:
 
 # Thruster color scheme by function
 THRUSTER_COLORS = {
-    'heave': '#3498db',      # Blue - vertical thrusters
-    'surge': '#e74c3c',      # Red - forward thrusters
-    'sway': '#2ecc71',       # Green - lateral thrusters
-    'default': '#9b59b6',    # Purple - unclassified
+    "heave": "#3498db",  # Blue - vertical thrusters
+    "surge": "#e74c3c",  # Red - forward thrusters
+    "sway": "#2ecc71",  # Green - lateral thrusters
+    "default": "#9b59b6",  # Purple - unclassified
 }
 
 
@@ -44,19 +45,19 @@ def classify_thruster(rotor: dict) -> str:
     Returns:
         Classification string: 'heave', 'surge', 'sway', or 'default'
     """
-    ax = abs(rotor.get('ax', 0))
-    ay = abs(rotor.get('ay', 0))
-    az = abs(rotor.get('az', 0))
+    ax = abs(rotor.get("ax", 0))
+    ay = abs(rotor.get("ay", 0))
+    az = abs(rotor.get("az", 0))
 
     # Dominant axis determines function
     if ax > ay and ax > az:
-        return 'surge'  # X-axis dominant = forward/backward
+        return "surge"  # X-axis dominant = forward/backward
     elif ay > ax and ay > az:
-        return 'sway'   # Y-axis dominant = left/right
+        return "sway"  # Y-axis dominant = left/right
     elif az > 0.3:
-        return 'heave'  # Z-axis component = vertical
+        return "heave"  # Z-axis component = vertical
     else:
-        return 'default'
+        return "default"
 
 
 def _add_vehicle_box(fig: go.Figure, positions: np.ndarray) -> None:
@@ -65,23 +66,51 @@ def _add_vehicle_box(fig: go.Figure, positions: np.ndarray) -> None:
     y_range = [positions[:, 1].min() - 0.05, positions[:, 1].max() + 0.05]
     z_range = [positions[:, 2].min() - 0.05, positions[:, 2].max() + 0.05]
 
-    x_body = [x_range[0], x_range[1], x_range[1], x_range[0],
-              x_range[0], x_range[1], x_range[1], x_range[0]]
-    y_body = [y_range[0], y_range[0], y_range[1], y_range[1],
-              y_range[0], y_range[0], y_range[1], y_range[1]]
-    z_body = [z_range[0], z_range[0], z_range[0], z_range[0],
-              z_range[1], z_range[1], z_range[1], z_range[1]]
+    x_body = [
+        x_range[0],
+        x_range[1],
+        x_range[1],
+        x_range[0],
+        x_range[0],
+        x_range[1],
+        x_range[1],
+        x_range[0],
+    ]
+    y_body = [
+        y_range[0],
+        y_range[0],
+        y_range[1],
+        y_range[1],
+        y_range[0],
+        y_range[0],
+        y_range[1],
+        y_range[1],
+    ]
+    z_body = [
+        z_range[0],
+        z_range[0],
+        z_range[0],
+        z_range[0],
+        z_range[1],
+        z_range[1],
+        z_range[1],
+        z_range[1],
+    ]
 
-    fig.add_trace(go.Mesh3d(
-        x=x_body, y=y_body, z=z_body,
-        i=[0, 0, 0, 1, 2, 3, 4, 4, 4, 5, 6, 7],
-        j=[1, 2, 4, 5, 6, 7, 5, 6, 0, 1, 2, 3],
-        k=[2, 3, 5, 6, 7, 4, 6, 7, 1, 2, 3, 0],
-        color='lightgray',
-        opacity=0.3,
-        name='Vehicle Body',
-        hoverinfo='name'
-    ))
+    fig.add_trace(
+        go.Mesh3d(
+            x=x_body,
+            y=y_body,
+            z=z_body,
+            i=[0, 0, 0, 1, 2, 3, 4, 4, 4, 5, 6, 7],
+            j=[1, 2, 4, 5, 6, 7, 5, 6, 0, 1, 2, 3],
+            k=[2, 3, 5, 6, 7, 4, 6, 7, 1, 2, 3, 0],
+            color="lightgray",
+            opacity=0.3,
+            name="Vehicle Body",
+            hoverinfo="name",
+        )
+    )
 
 
 def _add_vehicle_mesh(fig: go.Figure, geometry) -> bool:
@@ -104,25 +133,30 @@ def _add_vehicle_mesh(fig: go.Figure, geometry) -> bool:
     try:
         vertices, faces = load_mesh(geometry.mesh_file, geometry.mesh_scale)
     except (FileNotFoundError, ValueError) as err:
-        warnings.warn(f"Could not load vehicle mesh: {err}; drawing a box instead.",
-                      stacklevel=2)
+        warnings.warn(f"Could not load vehicle mesh: {err}; drawing a box instead.", stacklevel=2)
         return False
 
-    fig.add_trace(go.Mesh3d(
-        x=vertices[:, 0], y=vertices[:, 1], z=vertices[:, 2],
-        i=faces[:, 0], j=faces[:, 1], k=faces[:, 2],
-        color='lightsteelblue',
-        opacity=0.35,
-        flatshading=True,
-        name='Vehicle Body',
-        hoverinfo='name',
-    ))
+    fig.add_trace(
+        go.Mesh3d(
+            x=vertices[:, 0],
+            y=vertices[:, 1],
+            z=vertices[:, 2],
+            i=faces[:, 0],
+            j=faces[:, 1],
+            k=faces[:, 2],
+            color="lightsteelblue",
+            opacity=0.35,
+            flatshading=True,
+            name="Vehicle Body",
+            hoverinfo="name",
+        )
+    )
     return True
 
 
-def create_3d_thruster_plot(rotors: list[dict],
-                            effectiveness: np.ndarray | None = None,
-                            geometry=None) -> go.Figure:
+def create_3d_thruster_plot(
+    rotors: list[dict], effectiveness: np.ndarray | None = None, geometry=None
+) -> go.Figure:
     """
     Create interactive 3D plot of thruster positions and thrust vectors.
 
@@ -138,8 +172,7 @@ def create_3d_thruster_plot(rotors: list[dict],
     """
     fig = go.Figure()
 
-    positions = np.array([[r.get('px', 0), r.get('py', 0), r.get('pz', 0)]
-                          for r in rotors])
+    positions = np.array([[r.get("px", 0), r.get("py", 0), r.get("pz", 0)] for r in rotors])
 
     # Vehicle body: render the real mesh when one is provided, otherwise fall
     # back to a semi-transparent box estimated from the thruster extents.
@@ -151,97 +184,104 @@ def create_3d_thruster_plot(rotors: list[dict],
 
     # Add thrusters and thrust vectors
     for i, rotor in enumerate(rotors):
-        px = rotor.get('px', 0)
-        py = rotor.get('py', 0)
-        pz = rotor.get('pz', 0)
-        ax = rotor.get('ax', 0)
-        ay = rotor.get('ay', 0)
-        az = rotor.get('az', 0)
+        px = rotor.get("px", 0)
+        py = rotor.get("py", 0)
+        pz = rotor.get("pz", 0)
+        ax = rotor.get("ax", 0)
+        ay = rotor.get("ay", 0)
+        az = rotor.get("az", 0)
 
         # Normalize axis
         axis_norm = np.sqrt(ax**2 + ay**2 + az**2)
         if axis_norm > 0:
-            ax, ay, az = ax/axis_norm, ay/axis_norm, az/axis_norm
+            ax, ay, az = ax / axis_norm, ay / axis_norm, az / axis_norm
 
         # Classify and color
         thruster_type = classify_thruster(rotor)
         color = THRUSTER_COLORS[thruster_type]
 
         # Thruster position marker
-        fig.add_trace(go.Scatter3d(
-            x=[px], y=[py], z=[pz],
-            mode='markers+text',
-            marker=dict(size=10, color=color, symbol='diamond'),
-            text=[f'R{i}'],
-            textposition='top center',
-            name=f'Rotor {i} ({thruster_type})',
-            hovertemplate=(
-                f'<b>Rotor {i}</b><br>'
-                f'Position: ({px:.3f}, {py:.3f}, {pz:.3f})<br>'
-                f'Axis: ({ax:.3f}, {ay:.3f}, {az:.3f})<br>'
-                f'Type: {thruster_type}<extra></extra>'
+        fig.add_trace(
+            go.Scatter3d(
+                x=[px],
+                y=[py],
+                z=[pz],
+                mode="markers+text",
+                marker=dict(size=10, color=color, symbol="diamond"),
+                text=[f"R{i}"],
+                textposition="top center",
+                name=f"Rotor {i} ({thruster_type})",
+                hovertemplate=(
+                    f"<b>Rotor {i}</b><br>"
+                    f"Position: ({px:.3f}, {py:.3f}, {pz:.3f})<br>"
+                    f"Axis: ({ax:.3f}, {ay:.3f}, {az:.3f})<br>"
+                    f"Type: {thruster_type}<extra></extra>"
+                ),
             )
-        ))
+        )
 
         # Thrust vector as cone
         scale = 0.15  # Vector length
-        fig.add_trace(go.Cone(
-            x=[px], y=[py], z=[pz],
-            u=[ax * scale], v=[ay * scale], w=[az * scale],
-            colorscale=[[0, color], [1, color]],
-            showscale=False,
-            sizemode='absolute',
-            sizeref=0.08,
-            anchor='tail',
-            name=f'Thrust {i}',
-            hoverinfo='skip'
-        ))
+        fig.add_trace(
+            go.Cone(
+                x=[px],
+                y=[py],
+                z=[pz],
+                u=[ax * scale],
+                v=[ay * scale],
+                w=[az * scale],
+                colorscale=[[0, color], [1, color]],
+                showscale=False,
+                sizemode="absolute",
+                sizeref=0.08,
+                anchor="tail",
+                name=f"Thrust {i}",
+                hoverinfo="skip",
+            )
+        )
 
     # Add coordinate frame at origin
     axis_len = 0.2
-    for axis, color, label in [([1,0,0], 'red', 'X (Forward)'),
-                                ([0,1,0], 'green', 'Y (Port)'),
-                                ([0,0,1], 'blue', 'Z (Up)')]:
-        fig.add_trace(go.Scatter3d(
-            x=[0, axis[0]*axis_len],
-            y=[0, axis[1]*axis_len],
-            z=[0, axis[2]*axis_len],
-            mode='lines+text',
-            line=dict(color=color, width=4),
-            text=['', label],
-            textposition='top center',
-            showlegend=False,
-            hoverinfo='skip'
-        ))
+    for axis, color, label in [
+        ([1, 0, 0], "red", "X (Forward)"),
+        ([0, 1, 0], "green", "Y (Port)"),
+        ([0, 0, 1], "blue", "Z (Up)"),
+    ]:
+        fig.add_trace(
+            go.Scatter3d(
+                x=[0, axis[0] * axis_len],
+                y=[0, axis[1] * axis_len],
+                z=[0, axis[2] * axis_len],
+                mode="lines+text",
+                line=dict(color=color, width=4),
+                text=["", label],
+                textposition="top center",
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
 
     # Layout
     fig.update_layout(
-        title=dict(
-            text='<b>3D Thruster Configuration</b>',
-            x=0.5, xanchor='center'
-        ),
+        title=dict(text="<b>3D Thruster Configuration</b>", x=0.5, xanchor="center"),
         scene=dict(
-            xaxis_title='X (Forward) [m]',
-            yaxis_title='Y (Port) [m]',
-            zaxis_title='Z (Up) [m]',
-            aspectmode='data',
-            camera=dict(
-                eye=dict(x=1.5, y=1.5, z=1.0)
-            )
+            xaxis_title="X (Forward) [m]",
+            yaxis_title="Y (Port) [m]",
+            zaxis_title="Z (Up) [m]",
+            aspectmode="data",
+            camera=dict(eye=dict(x=1.5, y=1.5, z=1.0)),
         ),
-        legend=dict(
-            yanchor='top', y=0.99,
-            xanchor='left', x=0.01
-        ),
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
         margin=dict(l=0, r=0, t=50, b=0),
-        height=600
+        height=600,
     )
 
     return fig
 
 
-def create_effectiveness_heatmap(effectiveness: np.ndarray,
-                                  rotor_names: list[str] | None = None) -> go.Figure:
+def create_effectiveness_heatmap(
+    effectiveness: np.ndarray, rotor_names: list[str] | None = None
+) -> go.Figure:
     """
     Create heatmap visualization of effectiveness matrix.
 
@@ -255,9 +295,9 @@ def create_effectiveness_heatmap(effectiveness: np.ndarray,
     n_rotors = effectiveness.shape[1]
 
     if rotor_names is None:
-        rotor_names = [f'R{i}' for i in range(n_rotors)]
+        rotor_names = [f"R{i}" for i in range(n_rotors)]
 
-    axis_names = ['Roll', 'Pitch', 'Yaw', 'Fx', 'Fy', 'Fz']
+    axis_names = ["Roll", "Pitch", "Yaw", "Fx", "Fy", "Fz"]
 
     # Find max absolute value for symmetric colorscale
     max_val = np.abs(effectiveness).max()
@@ -271,41 +311,36 @@ def create_effectiveness_heatmap(effectiveness: np.ndarray,
                 dict(
                     x=rotor_names[j],
                     y=axis_names[i],
-                    text=f'{val:.3f}' if abs(val) > 0.001 else '0',
+                    text=f"{val:.3f}" if abs(val) > 0.001 else "0",
                     showarrow=False,
-                    font=dict(
-                        color='white' if abs(val) > max_val * 0.5 else 'black',
-                        size=11
-                    )
+                    font=dict(color="white" if abs(val) > max_val * 0.5 else "black", size=11),
                 )
             )
 
-    fig = go.Figure(data=go.Heatmap(
-        z=effectiveness,
-        x=rotor_names,
-        y=axis_names,
-        colorscale='RdBu_r',
-        zmid=0,
-        zmin=-max_val,
-        zmax=max_val,
-        colorbar=dict(
-            title=dict(text='Effect', side='right')
-        ),
-        hovertemplate=(
-            '<b>%{y}</b> from <b>%{x}</b><br>'
-            'Value: %{z:.4f}<extra></extra>'
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=effectiveness,
+            x=rotor_names,
+            y=axis_names,
+            colorscale="RdBu_r",
+            zmid=0,
+            zmin=-max_val,
+            zmax=max_val,
+            colorbar=dict(title=dict(text="Effect", side="right")),
+            hovertemplate=("<b>%{y}</b> from <b>%{x}</b><br>" "Value: %{z:.4f}<extra></extra>"),
         )
-    ))
+    )
 
     fig.update_layout(
         title=dict(
-            text='<b>Effectiveness Matrix</b><br><sup>Motor contribution to each DOF</sup>',
-            x=0.5, xanchor='center'
+            text="<b>Effectiveness Matrix</b><br><sup>Motor contribution to each DOF</sup>",
+            x=0.5,
+            xanchor="center",
         ),
-        xaxis_title='Rotor',
-        yaxis_title='Degree of Freedom',
+        xaxis_title="Rotor",
+        yaxis_title="Degree of Freedom",
         annotations=annotations,
-        height=400
+        height=400,
     )
 
     return fig
@@ -322,8 +357,8 @@ def create_control_authority_chart(controllability_result: dict) -> go.Figure:
     Returns:
         Plotly Figure object
     """
-    singular_values = controllability_result['singular_values']
-    axis_names = ['Roll', 'Pitch', 'Yaw', 'Fx', 'Fy', 'Fz']
+    singular_values = controllability_result["singular_values"]
+    axis_names = ["Roll", "Pitch", "Yaw", "Fx", "Fy", "Fz"]
 
     # Only show first 6 singular values
     sv = singular_values[:6]
@@ -334,68 +369,75 @@ def create_control_authority_chart(controllability_result: dict) -> go.Figure:
     for s in sv:
         ratio = s / max_sv if max_sv > 0 else 0
         if ratio > 0.3:
-            colors.append('#2ecc71')  # Green - strong
+            colors.append("#2ecc71")  # Green - strong
         elif ratio > 0.1:
-            colors.append('#f39c12')  # Yellow - moderate
+            colors.append("#f39c12")  # Yellow - moderate
         else:
-            colors.append('#e74c3c')  # Red - weak
+            colors.append("#e74c3c")  # Red - weak
 
     fig = go.Figure()
 
     # Horizontal bar chart
-    fig.add_trace(go.Bar(
-        y=axis_names[:len(sv)],
-        x=sv,
-        orientation='h',
-        marker_color=colors,
-        text=[f'{s:.3f}' for s in sv],
-        textposition='outside',
-        hovertemplate='<b>%{y}</b><br>Singular value: %{x:.4f}<extra></extra>'
-    ))
+    fig.add_trace(
+        go.Bar(
+            y=axis_names[: len(sv)],
+            x=sv,
+            orientation="h",
+            marker_color=colors,
+            text=[f"{s:.3f}" for s in sv],
+            textposition="outside",
+            hovertemplate="<b>%{y}</b><br>Singular value: %{x:.4f}<extra></extra>",
+        )
+    )
 
     # Add threshold line at 10% of max
     threshold = max_sv * 0.1
     fig.add_vline(
         x=threshold,
-        line_dash='dash',
-        line_color='red',
-        annotation_text='10% threshold',
-        annotation_position='top right'
+        line_dash="dash",
+        line_color="red",
+        annotation_text="10% threshold",
+        annotation_position="top right",
     )
 
     # Add summary text
-    rank = controllability_result.get('rank', 0)
-    controllable = controllability_result.get('controllable', False)
-    cond_num = controllability_result.get('condition_number', float('inf'))
+    rank = controllability_result.get("rank", 0)
+    controllable = controllability_result.get("controllable", False)
+    cond_num = controllability_result.get("condition_number", float("inf"))
 
-    status_color = '#2ecc71' if controllable else '#e74c3c'
-    status_text = 'CONTROLLABLE' if controllable else 'NOT CONTROLLABLE'
+    status_color = "#2ecc71" if controllable else "#e74c3c"
+    status_text = "CONTROLLABLE" if controllable else "NOT CONTROLLABLE"
 
     fig.update_layout(
         title=dict(
-            text=(f'<b>Control Authority (Singular Values)</b><br>'
-                  f'<sup>Rank: {rank}/6 | '
-                  f'<span style="color:{status_color}">{status_text}</span> | '
-                  f'Condition: {cond_num:.1f}</sup>'),
-            x=0.5, xanchor='center'
+            text=(
+                f"<b>Control Authority (Singular Values)</b><br>"
+                f"<sup>Rank: {rank}/6 | "
+                f'<span style="color:{status_color}">{status_text}</span> | '
+                f"Condition: {cond_num:.1f}</sup>"
+            ),
+            x=0.5,
+            xanchor="center",
         ),
-        xaxis_title='Singular Value',
-        yaxis_title='DOF',
+        xaxis_title="Singular Value",
+        yaxis_title="DOF",
         showlegend=False,
         height=400,
-        xaxis=dict(range=[0, max_sv * 1.2])
+        xaxis=dict(range=[0, max_sv * 1.2]),
     )
 
     return fig
 
 
-def generate_visualization_report(rotors: list[dict],
-                                   effectiveness: np.ndarray,
-                                   controllability_result: dict,
-                                   issues: list[str],
-                                   output_path: str = 'effectiveness_report.html',
-                                   title: str = 'Thruster Configuration Report',
-                                   geometry=None) -> str:
+def generate_visualization_report(
+    rotors: list[dict],
+    effectiveness: np.ndarray,
+    controllability_result: dict,
+    issues: list[str],
+    output_path: str = "effectiveness_report.html",
+    title: str = "Thruster Configuration Report",
+    geometry=None,
+) -> str:
     """
     Generate complete HTML visualization report.
 
@@ -413,8 +455,7 @@ def generate_visualization_report(rotors: list[dict],
     """
     if not PLOTLY_AVAILABLE:
         raise ImportError(
-            "Plotly is required for visualization. "
-            "Install with: pip install plotly>=5.0.0"
+            "Plotly is required for visualization. " "Install with: pip install plotly>=5.0.0"
         )
 
     # Create individual figures
@@ -427,7 +468,7 @@ def generate_visualization_report(rotors: list[dict],
     plotly_js = get_plotlyjs()
 
     # Build HTML report
-    html_content = f'''<!DOCTYPE html>
+    html_content = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -528,7 +569,7 @@ def generate_visualization_report(rotors: list[dict],
 
         <div class="issues-container">
             <div class="issues-title">Issue Detection</div>
-'''
+"""
 
     if issues:
         for issue in issues:
@@ -536,7 +577,7 @@ def generate_visualization_report(rotors: list[dict],
     else:
         html_content += '            <div class="no-issues">No issues detected</div>\n'
 
-    html_content += f'''        </div>
+    html_content += f"""        </div>
     </div>
 
     <script>
@@ -549,13 +590,13 @@ def generate_visualization_report(rotors: list[dict],
         Plotly.newPlot('authority', authority.data, authority.layout, {{responsive: true}});
     </script>
 </body>
-</html>'''
+</html>"""
 
     # Write to file
-    output_path = Path(output_path)
-    output_path.write_text(html_content)
+    out_path = Path(output_path)
+    out_path.write_text(html_content)
 
-    return str(output_path.absolute())
+    return str(out_path.absolute())
 
 
 def check_plotly_available() -> bool:

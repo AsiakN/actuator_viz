@@ -59,8 +59,6 @@ def load_mesh(path: str | Path, scale: float = 1.0) -> tuple[np.ndarray, np.ndar
     if vertices.size == 0 or faces.size == 0:
         raise ValueError(f"Mesh {path} contains no geometry")
     if faces.shape[1] != 3:
-        raise ValueError(
-            f"Mesh {path} is not triangulated (got {faces.shape[1]}-sided faces)"
-        )
+        raise ValueError(f"Mesh {path} is not triangulated (got {faces.shape[1]}-sided faces)")
 
     return vertices, faces

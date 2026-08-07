@@ -30,10 +30,12 @@ def test_axis_normalized_is_unit_length():
 
 def test_duplicate_ids_are_rejected():
     with pytest.raises(ValueError):
-        ActuatorConfig(actuators=[
-            Actuator(id=0, position=(0, 0, 0), axis=(0, 0, 1)),
-            Actuator(id=0, position=(1, 0, 0), axis=(0, 0, 1)),
-        ])
+        ActuatorConfig(
+            actuators=[
+                Actuator(id=0, position=(0, 0, 0), axis=(0, 0, 1)),
+                Actuator(id=0, position=(1, 0, 0), axis=(0, 0, 1)),
+            ]
+        )
 
 
 def test_frame_string_is_coerced_to_enum():
@@ -53,10 +55,12 @@ def test_get_actuator_by_id_and_name():
 
 
 def test_rotor_list_roundtrip_preserves_geometry():
-    config = ActuatorConfig(actuators=[
-        Actuator(id=0, position=(0.1, 0.2, 0.3), axis=(0, 0, 1), coefficient=1.5),
-        Actuator(id=1, position=(-0.1, 0.0, 0.2), axis=(1, 0, 0), moment_ratio=0.2),
-    ])
+    config = ActuatorConfig(
+        actuators=[
+            Actuator(id=0, position=(0.1, 0.2, 0.3), axis=(0, 0, 1), coefficient=1.5),
+            Actuator(id=1, position=(-0.1, 0.0, 0.2), axis=(1, 0, 0), moment_ratio=0.2),
+        ]
+    )
     rotors = config.to_rotor_list()
     rebuilt = ActuatorConfig.from_rotor_list(rotors)
 

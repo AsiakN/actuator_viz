@@ -18,8 +18,7 @@ from .models import ActuatorConfig, AnalysisResult
 
 
 def analyze_controllability(
-    effectiveness: np.ndarray,
-    threshold_ratio: float = 0.1
+    effectiveness: np.ndarray, threshold_ratio: float = 0.1
 ) -> AnalysisResult:
     """
     Analyze controllability of the system using SVD.
@@ -60,7 +59,7 @@ def analyze_controllability(
     if S[-1] > tolerance:
         condition_number = S[0] / S[-1]
     else:
-        condition_number = float('inf')
+        condition_number = float("inf")
 
     return AnalysisResult(
         rank=rank,
@@ -95,10 +94,7 @@ def analyze_config(config: ActuatorConfig) -> AnalysisResult:
     return result
 
 
-def detect_issues(
-    effectiveness: np.ndarray,
-    config: ActuatorConfig
-) -> list[str]:
+def detect_issues(effectiveness: np.ndarray, config: ActuatorConfig) -> list[str]:
     """
     Detect common configuration issues.
 
@@ -145,9 +141,7 @@ def detect_issues(
             a_j = config.actuators[j]
 
             # Check if positions are very close
-            pos_diff = np.linalg.norm(
-                np.array(a_i.position) - np.array(a_j.position)
-            )
+            pos_diff = np.linalg.norm(np.array(a_i.position) - np.array(a_j.position))
 
             # Check if axes are parallel (same or opposite direction)
             axis_dot = abs(np.dot(a_i.axis_normalized, a_j.axis_normalized))
@@ -193,6 +187,7 @@ class FailureImpact:
         condition_number: Condition number of the degraded system
         lost_dofs: DOFs achievable in the full system but not after this failure
     """
+
     actuator_id: int
     actuator_name: str
     rank: int

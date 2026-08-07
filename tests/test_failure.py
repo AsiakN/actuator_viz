@@ -65,9 +65,11 @@ def test_over_actuated_rov_tolerates_any_single_failure(rov_config):
 
 def test_single_actuator_failure_loses_everything():
     # Removing the only actuator leaves nothing controllable.
-    config = ActuatorConfig(actuators=[
-        Actuator(id=7, position=(0, 0, 0), axis=(0, 0, 1)),
-    ])
+    config = ActuatorConfig(
+        actuators=[
+            Actuator(id=7, position=(0, 0, 0), axis=(0, 0, 1)),
+        ]
+    )
     impact = simulate_failure(config, actuator_index=0)
     assert impact.rank == 0
     assert not impact.controllable

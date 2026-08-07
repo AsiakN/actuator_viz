@@ -105,8 +105,8 @@ def analyze(config: ActuatorConfig) -> AnalysisResult:
 
 # Register default parsers (order matters for auto-detection)
 register_parser(JsonYamlParser())  # Handles .yaml, .yml, .json
-register_parser(PX4Parser())       # Handles PX4 airframes (CA_ROTOR params)
-register_parser(ArduPilotParser()) # Handles .param, .parm files
+register_parser(PX4Parser())  # Handles PX4 airframes (CA_ROTOR params)
+register_parser(ArduPilotParser())  # Handles .param, .parm files
 
 
 __all__ = [

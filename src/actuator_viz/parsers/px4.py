@@ -17,10 +17,11 @@ Example PX4 airframe format:
 from __future__ import annotations
 
 import re
+import warnings
 from pathlib import Path
 
-from ..core.models import Actuator, ActuatorConfig
-from .base import ConfigParser
+from ..core.models import Actuator, ActuatorConfig, CoordinateFrame
+from .base import NUMBER_RE, ConfigParser
 
 
 class PX4Parser(ConfigParser):
@@ -32,23 +33,22 @@ class PX4Parser(ConfigParser):
     """
 
     # Regex patterns for CA_ROTOR parameters
-    # Matches: CA_ROTOR0_PX, CA_ROTOR10_AZ, etc.
+    # Matches: CA_ROTOR0_PX, CA_ROTOR10_AZ, etc. The value uses the shared
+    # NUMBER_RE so signs and scientific notation parse and malformed tokens
+    # (e.g. a bare ".") are never captured.
     PARAM_PATTERNS = {
-        'px': re.compile(r'CA_ROTOR(\d+)_PX\s+(-?[\d.]+(?:e[+-]?\d+)?)', re.IGNORECASE),
-        'py': re.compile(r'CA_ROTOR(\d+)_PY\s+(-?[\d.]+(?:e[+-]?\d+)?)', re.IGNORECASE),
-        'pz': re.compile(r'CA_ROTOR(\d+)_PZ\s+(-?[\d.]+(?:e[+-]?\d+)?)', re.IGNORECASE),
-        'ax': re.compile(r'CA_ROTOR(\d+)_AX\s+(-?[\d.]+(?:e[+-]?\d+)?)', re.IGNORECASE),
-        'ay': re.compile(r'CA_ROTOR(\d+)_AY\s+(-?[\d.]+(?:e[+-]?\d+)?)', re.IGNORECASE),
-        'az': re.compile(r'CA_ROTOR(\d+)_AZ\s+(-?[\d.]+(?:e[+-]?\d+)?)', re.IGNORECASE),
-        'km': re.compile(r'CA_ROTOR(\d+)_KM\s+(-?[\d.]+(?:e[+-]?\d+)?)', re.IGNORECASE),
-        'ct': re.compile(r'CA_ROTOR(\d+)_CT\s+(-?[\d.]+(?:e[+-]?\d+)?)', re.IGNORECASE),
+        key: re.compile(rf"CA_ROTOR(\d+)_{key.upper()}\s+({NUMBER_RE})", re.IGNORECASE)
+        for key in ("px", "py", "pz", "ax", "ay", "az", "km", "ct")
     }
 
+    # Which per-rotor keys carry actual layout geometry (vs. coefficients).
+    _GEOMETRY_KEYS = frozenset({"px", "py", "pz", "ax", "ay", "az"})
+
     # Pattern to detect rotor count
-    ROTOR_COUNT_PATTERN = re.compile(r'CA_ROTOR_COUNT\s+(\d+)', re.IGNORECASE)
+    ROTOR_COUNT_PATTERN = re.compile(r"CA_ROTOR_COUNT\s+(\d+)", re.IGNORECASE)
 
     # Pattern to detect if file is a PX4 airframe
-    DETECTION_PATTERN = re.compile(r'CA_ROTOR\d+_[PAK]', re.IGNORECASE)
+    DETECTION_PATTERN = re.compile(r"CA_ROTOR\d+_[PAK]", re.IGNORECASE)
 
     @property
     def name(self) -> str:
@@ -93,33 +93,64 @@ class PX4Parser(ConfigParser):
         rotors = self._parse_rotors(content)
 
         if not rotors:
-            raise ValueError("No CA_ROTOR parameters found in source")
+            raise ValueError(
+                "No CA_ROTOR parameters found. This looks like a PX4 file but "
+                "carries no control-allocation rotor definitions."
+            )
+
+        # Stock PX4 airframes frequently set only SYS_AUTOSTART / CA_ROTOR_COUNT
+        # and inherit the actual geometry from defaults — there's nothing to
+        # analyze. Require at least one position/axis value to be present.
+        if not any(self._GEOMETRY_KEYS & r.keys() for r in rotors.values()):
+            raise ValueError(
+                "Found CA_ROTOR references but no rotor geometry "
+                "(CA_ROTOR*_PX/PY/PZ/AX/AY/AZ). Stock airframes often inherit "
+                "geometry from PX4 defaults rather than listing it; export the "
+                "resolved parameters or describe the layout in a YAML config."
+            )
+
+        # Sanity-check against a declared rotor count, if present.
+        count_match = self.ROTOR_COUNT_PATTERN.search(content)
+        if count_match:
+            declared = int(count_match.group(1))
+            if declared != len(rotors):
+                warnings.warn(
+                    f"CA_ROTOR_COUNT is {declared} but geometry was found for "
+                    f"{len(rotors)} rotor(s); analyzing the {len(rotors)} defined.",
+                    stacklevel=2,
+                )
 
         # Convert to Actuator objects
         actuators = []
         for idx, rotor_data in sorted(rotors.items()):
+            axis = (
+                rotor_data.get("ax", 0.0),
+                rotor_data.get("ay", 0.0),
+                rotor_data.get("az", 1.0),
+            )
+            if axis == (0.0, 0.0, 0.0):
+                raise ValueError(
+                    f"Rotor {idx} has a zero thrust axis "
+                    f"(CA_ROTOR{idx}_AX/AY/AZ all 0); it has no thrust direction."
+                )
             actuator = Actuator(
                 id=idx,
                 name=f"Rotor_{idx}",
                 position=(
-                    rotor_data.get('px', 0.0),
-                    rotor_data.get('py', 0.0),
-                    rotor_data.get('pz', 0.0),
+                    rotor_data.get("px", 0.0),
+                    rotor_data.get("py", 0.0),
+                    rotor_data.get("pz", 0.0),
                 ),
-                axis=(
-                    rotor_data.get('ax', 0.0),
-                    rotor_data.get('ay', 0.0),
-                    rotor_data.get('az', 1.0),
-                ),
-                coefficient=rotor_data.get('ct', 1.0),
-                moment_ratio=rotor_data.get('km', 0.0),
+                axis=axis,
+                coefficient=rotor_data.get("ct", 1.0),
+                moment_ratio=rotor_data.get("km", 0.0),
             )
             actuators.append(actuator)
 
         return ActuatorConfig(
             name=name,
             actuators=actuators,
-            frame="NED",  # PX4 uses NED frame
+            frame=CoordinateFrame.NED,  # PX4 uses NED frame
             units="meters",
         )
 
@@ -149,12 +180,12 @@ class PX4Parser(ConfigParser):
 
         # Try to find airframe name in content (often in comments)
         # Look for patterns like: # Airframe: MyQuad
-        name_match = re.search(r'#\s*(?:Airframe|Name|Vehicle):\s*(.+)', content, re.IGNORECASE)
+        name_match = re.search(r"#\s*(?:Airframe|Name|Vehicle):\s*(.+)", content, re.IGNORECASE)
         if name_match:
             return name_match.group(1).strip()
 
         # Look for SYS_AUTOSTART comment
-        autostart_match = re.search(r'SYS_AUTOSTART\s+(\d+)', content)
+        autostart_match = re.search(r"SYS_AUTOSTART\s+(\d+)", content)
         if autostart_match:
             return f"PX4 Airframe {autostart_match.group(1)}"
 
@@ -170,7 +201,7 @@ class PX4Parser(ConfigParser):
                 value = float(match.group(2))
 
                 if rotor_idx not in rotors:
-                    rotors[rotor_idx] = {'ct': 1.0, 'km': 0.0}
+                    rotors[rotor_idx] = {"ct": 1.0, "km": 0.0}
 
                 rotors[rotor_idx][param] = value
 
